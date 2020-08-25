@@ -16,7 +16,7 @@ public class GRPCServer {
 
     private Server server;
 
-    private void start() throws IOException {
+    public void start() throws IOException {
         /* The port on which the server should run */
         int port = 50051;
         server = ServerBuilder.forPort(port)
@@ -49,7 +49,7 @@ public class GRPCServer {
     /**
      * Await termination on the main thread since the grpc library uses daemon threads.
      */
-    private void blockUntilShutdown() throws InterruptedException {
+    public void blockUntilShutdown() throws InterruptedException {
         if (server != null) {
             server.awaitTermination();
         }
