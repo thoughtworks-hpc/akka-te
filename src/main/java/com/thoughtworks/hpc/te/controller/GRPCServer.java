@@ -1,5 +1,6 @@
 package com.thoughtworks.hpc.te.controller;
 
+import akka.actor.typed.ActorSystem;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionService;
@@ -9,22 +10,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * Server that manages startup/shutdown of a {@code Greeter} server.
+ * Server that manages startup/shutdown of a {@code GRPCServer}.
  */
 public class GRPCServer {
     private static final Logger logger = Logger.getLogger(GRPCServer.class.getName());
 
     private Server server;
 
-    public void start() throws IOException {
+    public void start(int port, ActorSystem<Void> system) throws IOException {
         /* The port on which the server should run */
-        int port = 50051;
         server = ServerBuilder.forPort(port)
-                .addService(new TradingEngineGRPCImpl())
+                .addService(new TradingEngineGRPCImpl(system))
                 .addService(ProtoReflectionService.newInstance())
                 .build()
                 .start();
-        logger.info("Server started, listening on " + port);
+        system.log().info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -53,14 +53,5 @@ public class GRPCServer {
         if (server != null) {
             server.awaitTermination();
         }
-    }
-
-    /**
-     * Main launches the server from the command line.
-     */
-    public static void main(String[] args) throws IOException, InterruptedException {
-        final GRPCServer server = new GRPCServer();
-        server.start();
-        server.blockUntilShutdown();
     }
 }
