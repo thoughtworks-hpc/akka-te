@@ -5,7 +5,10 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
+import com.google.protobuf.Timestamp;
 import com.thoughtworks.hpc.te.controller.Order;
+import com.thoughtworks.hpc.te.controller.Trade;
+import com.thoughtworks.hpc.te.controller.TradingSide;
 
 public class MatchActor {
 
@@ -32,6 +35,20 @@ public class MatchActor {
 
     private Behavior<Order> match(Order order) {
         context.getLog().info("MatchActor handle order {}", order);
+        // Todo: 撮合逻辑
+        Trade trade = Trade.newBuilder()
+                .setMakerId(1)
+                .setTakerId(2)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setAmount(3)
+                .setPrice(4)
+                .setSellerUserId(5)
+                .setBuyerUserId(6)
+                .setSymbolId(7)
+                .setDealTime(Timestamp.getDefaultInstance())
+                .build();
+        context.getLog().info("Match success, trade {}", trade);
+        // Todo: 把成交记录丢给actor，由actor发送给订阅者
         return Behaviors.same();
     }
 }
