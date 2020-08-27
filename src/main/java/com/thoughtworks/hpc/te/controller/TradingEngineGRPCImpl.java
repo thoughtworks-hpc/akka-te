@@ -7,6 +7,7 @@ import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
 import com.google.protobuf.Empty;
 import com.thoughtworks.hpc.te.actor.MatchActor;
+import com.thoughtworks.hpc.te.actor.RootActor;
 import io.grpc.stub.StreamObserver;
 
 import java.time.Duration;
@@ -14,9 +15,9 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
 public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBase {
-    private final ActorSystem<Void> system;
+    private final ActorSystem<RootActor.CreateTradeForwarder> system;
 
-    public TradingEngineGRPCImpl(ActorSystem<Void> system) {
+    public TradingEngineGRPCImpl(ActorSystem<RootActor.CreateTradeForwarder> system) {
         this.system = system;
     }
 
@@ -51,6 +52,6 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
 
     @Override
     public void subscribeMatchResult(Empty request, StreamObserver<Trade> responseObserver) {
-        // Todo:
+        system.tell(new RootActor.CreateTradeForwarder(responseObserver));
     }
 }

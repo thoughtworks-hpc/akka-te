@@ -1,6 +1,7 @@
 package com.thoughtworks.hpc.te.actor;
 
 import akka.actor.typed.Behavior;
+import akka.actor.typed.eventstream.EventStream;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.Receptionist;
@@ -12,6 +13,7 @@ import com.thoughtworks.hpc.te.controller.TradingSide;
 
 public class MatchActor {
 
+    // Todo: 这里可能没必要保存context
     private final ActorContext<Order> context;
 
     public static Behavior<Order> create(int symbolId) {
@@ -48,7 +50,9 @@ public class MatchActor {
                 .setDealTime(Timestamp.getDefaultInstance())
                 .build();
         context.getLog().info("Match success, trade {}", trade);
-        // Todo: 把成交记录丢给actor，由actor发送给订阅者
+
+        context.getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+
         return Behaviors.same();
     }
 }
