@@ -7,23 +7,28 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import com.thoughtworks.hpc.te.controller.Trade;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.UUID;
 
 // Todo: 可能由RootActor来创建TradeForwarder不太合适
 public class RootActor extends AbstractBehavior<RootActor.CreateTradeForwarder> {
+    Logger logger;
+
     public static Behavior<CreateTradeForwarder> create() {
         return Behaviors.setup(RootActor::new);
     }
 
     private RootActor(ActorContext<CreateTradeForwarder> context) {
         super(context);
+        logger = getContext().getLog();
 
         List<Integer> symbolIDs = context.getSystem().settings().config().getIntList("te.symbol-id");
         for (int symbolID : symbolIDs) {
             String actorName = "match_actor_" + symbolID;
             context.spawn(MatchActor.create(symbolID), actorName);
-            getContext().getLog().info("Spawn actor {}", actorName);
+            logger.info("Spawn actor {}", actorName);
         }
     }
 
@@ -43,9 +48,9 @@ public class RootActor extends AbstractBehavior<RootActor.CreateTradeForwarder> 
     }
 
     private Behavior<CreateTradeForwarder> onCreateTradeForwarder(CreateTradeForwarder createTradeForwarder) {
-        getContext().getLog().info("spawn trade forwarder");
-        // todo: 维一的actor_name
-        getContext().spawn(TradeForwarderActor.create(createTradeForwarder.responseObserver), "trader_forwarder_1");
+        String actor_name = "trade_forwarder_" + UUID.randomUUID().toString();
+        logger.info("spawn trade forwarder: " + actor_name);
+        getContext().spawn(TradeForwarderActor.create(createTradeForwarder.responseObserver), actor_name);
         return this;
     }
 }
