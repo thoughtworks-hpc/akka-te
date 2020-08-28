@@ -100,6 +100,45 @@ public class MatchActorTest {
         assertTradeEquals(wantTrade, gotTrade);
     }
 
+    @Test
+    public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_have_same_amount_when_match_sell_order() {
+        TestProbe<Trade> probe = testKit.createTestProbe();
+        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
+        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
+        Order sellOder = Order.newBuilder()
+                .setOrderId(1)
+                .setSymbolId(1)
+                .setUserId(1)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setPrice(3)
+                .setAmount(3)
+                .build();
+        Order buyOrder = Order.newBuilder()
+                .setOrderId(2)
+                .setSymbolId(1)
+                .setUserId(2)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setPrice(5)
+                .setAmount(3)
+                .build();
+
+        matchActor.tell(buyOrder);
+        matchActor.tell(sellOder);
+
+        Trade wantTrade = Trade.newBuilder()
+                .setMakerId(buyOrder.getOrderId())
+                .setTakerId(sellOder.getOrderId())
+                .setTradingSide(sellOder.getTradingSide())
+                .setAmount(buyOrder.getAmount())
+                .setPrice(buyOrder.getPrice())
+                .setSellerUserId(sellOder.getUserId())
+                .setBuyerUserId(buyOrder.getUserId())
+                .setSymbolId(buyOrder.getSymbolId())
+                .build();
+        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        assertTradeEquals(wantTrade, gotTrade);
+    }
+
     private void assertTradeEquals(Trade want, Trade got) {
         Trade wantOverwriteDealTime = want.toBuilder().setDealTime(got.getDealTime()).build();
         Assert.assertEquals(wantOverwriteDealTime, got);

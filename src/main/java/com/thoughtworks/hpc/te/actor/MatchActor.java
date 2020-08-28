@@ -57,44 +57,43 @@ public class MatchActor extends AbstractBehavior<Order> {
 
     private Behavior<Order> match(Order order) {
         logger.info("MatchActor handle order {}", order);
-        // Todo: 撮合逻辑
-        Order buy;
-        Order sell;
+        Order buyOrder;
+        Order sellOrder;
 
         if (order.getTradingSide() == TradingSide.TRADING_BUY) {
-            buy = order;
-            sell = sellOrderQueue.peek();
+            buyOrder = order;
+            sellOrder = sellOrderQueue.peek();
         } else {
-            sell = order;
-            buy = buyOrderQueue.peek();
+            sellOrder = order;
+            buyOrder = buyOrderQueue.peek();
         }
 
-        if (buy == null || sell == null) {
+        if (buyOrder == null || sellOrder == null) {
             logger.info("Opposite order queue is empty. add order {} to queue.", order.getOrderId());
             addOrderToQueue(order);
             return Behaviors.same();
         }
 
-        if (buy.getPrice() < sell.getPrice()) {
-            logger.info("Buy order price [{}] less than sell order[{}].", buy.getPrice(), sell.getPrice());
+        if (buyOrder.getPrice() < sellOrder.getPrice()) {
+            logger.info("Buy order price [{}] less than sell order[{}].", buyOrder.getPrice(), sellOrder.getPrice());
             addOrderToQueue(order);
             return Behaviors.same();
         }
 
-        // buy price >= sell price
-        if (buy.getAmount() == sell.getAmount()) {
+        // buy order price >= sell order price
+        if (buyOrder.getAmount() == sellOrder.getAmount()) {
             Trade trade = Trade.newBuilder()
-                    .setMakerId(order == buy ? sell.getOrderId() : buy.getOrderId())
+                    .setMakerId(order == buyOrder ? sellOrder.getOrderId() : buyOrder.getOrderId())
                     .setTakerId(order.getOrderId())
                     .setTradingSide(order.getTradingSide())
                     .setAmount(order.getAmount())
-                    .setPrice(order == buy ? sell.getPrice() : buy.getPrice())
-                    .setSellerUserId(sell.getUserId())
-                    .setBuyerUserId(buy.getUserId())
+                    .setPrice(order == buyOrder ? sellOrder.getPrice() : buyOrder.getPrice())
+                    .setSellerUserId(sellOrder.getUserId())
+                    .setBuyerUserId(buyOrder.getUserId())
                     .setSymbolId(order.getSymbolId())
                     .setDealTime(generateCurrentTimestamp())
                     .build();
-            if (order == buy) {
+            if (order == buyOrder) {
                 sellOrderQueue.poll();
             } else {
                 buyOrderQueue.poll();
