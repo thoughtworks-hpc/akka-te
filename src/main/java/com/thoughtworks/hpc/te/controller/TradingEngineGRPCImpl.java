@@ -15,9 +15,9 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
 public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBase {
-    private final ActorSystem<RootActor.CreateTradeForwarder> system;
+    private final ActorSystem<RootActor.Command> system;
 
-    public TradingEngineGRPCImpl(ActorSystem<RootActor.CreateTradeForwarder> system) {
+    public TradingEngineGRPCImpl(ActorSystem<RootActor.Command> system) {
         this.system = system;
     }
 

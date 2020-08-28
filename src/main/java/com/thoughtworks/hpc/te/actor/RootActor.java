@@ -13,14 +13,16 @@ import java.util.List;
 import java.util.UUID;
 
 // Todo: 可能由RootActor来创建TradeForwarder不太合适
-public class RootActor extends AbstractBehavior<RootActor.CreateTradeForwarder> {
-    Logger logger;
+public class RootActor extends AbstractBehavior<RootActor.Command> {
+    private final Logger logger;
 
-    public static Behavior<CreateTradeForwarder> create() {
+    public interface Command {}
+
+    public static Behavior<Command> create() {
         return Behaviors.setup(RootActor::new);
     }
 
-    private RootActor(ActorContext<CreateTradeForwarder> context) {
+    private RootActor(ActorContext<Command> context) {
         super(context);
         logger = getContext().getLog();
 
@@ -32,7 +34,7 @@ public class RootActor extends AbstractBehavior<RootActor.CreateTradeForwarder> 
         }
     }
 
-    public static class CreateTradeForwarder {
+    public static class CreateTradeForwarder implements Command {
         StreamObserver<Trade> responseObserver;
 
         public CreateTradeForwarder(StreamObserver<Trade> responseObserver) {
@@ -41,13 +43,13 @@ public class RootActor extends AbstractBehavior<RootActor.CreateTradeForwarder> 
     }
 
     @Override
-    public Receive<CreateTradeForwarder> createReceive() {
+    public Receive<Command> createReceive() {
         return newReceiveBuilder()
                 .onMessage(CreateTradeForwarder.class, this::onCreateTradeForwarder)
                 .build();
     }
 
-    private Behavior<CreateTradeForwarder> onCreateTradeForwarder(CreateTradeForwarder createTradeForwarder) {
+    private Behavior<Command> onCreateTradeForwarder(CreateTradeForwarder createTradeForwarder) {
         String actor_name = "trade_forwarder_" + UUID.randomUUID().toString();
         logger.info("spawn trade forwarder: " + actor_name);
         getContext().spawn(TradeForwarderActor.create(createTradeForwarder.responseObserver), actor_name);

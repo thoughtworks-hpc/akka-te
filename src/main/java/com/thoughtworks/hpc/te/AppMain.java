@@ -13,7 +13,7 @@ public class AppMain {
         Config config = ConfigFactory.load();
         final int rpcPort = config.getInt("rpc.port");
         final GRPCServer server = new GRPCServer();
-        ActorSystem<RootActor.CreateTradeForwarder> system = ActorSystem.create(RootActor.create(), "TradingEngine", config);
+        ActorSystem<RootActor.Command> system = ActorSystem.create(RootActor.create(), "TradingEngine", config);
         server.start(rpcPort, system);
 
         server.blockUntilShutdown();

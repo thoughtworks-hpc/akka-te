@@ -18,7 +18,7 @@ public class GRPCServer {
 
     private Server server;
 
-    public void start(int port, ActorSystem<RootActor.CreateTradeForwarder> system) throws IOException {
+    public void start(int port, ActorSystem<RootActor.Command> system) throws IOException {
         /* The port on which the server should run */
         server = ServerBuilder.forPort(port)
                 .addService(new TradingEngineGRPCImpl(system))
