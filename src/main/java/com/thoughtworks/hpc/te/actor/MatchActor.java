@@ -82,17 +82,7 @@ public class MatchActor extends AbstractBehavior<Order> {
 
         // buy order price >= sell order price
         if (buyOrder.getAmount() == sellOrder.getAmount()) {
-            Trade trade = Trade.newBuilder()
-                    .setMakerId(order == buyOrder ? sellOrder.getOrderId() : buyOrder.getOrderId())
-                    .setTakerId(order.getOrderId())
-                    .setTradingSide(order.getTradingSide())
-                    .setAmount(order.getAmount())
-                    .setPrice(order == buyOrder ? sellOrder.getPrice() : buyOrder.getPrice())
-                    .setSellerUserId(sellOrder.getUserId())
-                    .setBuyerUserId(buyOrder.getUserId())
-                    .setSymbolId(order.getSymbolId())
-                    .setDealTime(generateCurrentTimestamp())
-                    .build();
+            Trade trade = generateTrade(order, buyOrder, sellOrder, order.getAmount());
             if (order == buyOrder) {
                 sellOrderQueue.poll();
             } else {
@@ -103,7 +93,37 @@ public class MatchActor extends AbstractBehavior<Order> {
             return Behaviors.same();
         }
 
+        if (buyOrder.getAmount() < sellOrder.getAmount()) {
+            Trade trade = generateTrade(order, buyOrder, sellOrder, buyOrder.getAmount());
+            if (order == buyOrder) {
+                sellOrderQueue.poll();
+                Order newSellOrder = sellOrder.toBuilder()
+                        .setAmount(sellOrder.getAmount() - buyOrder.getAmount())
+                        .build();
+                sellOrderQueue.add(newSellOrder);
+                logger.info("Match success, trade {}", trade);
+                getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+                return Behaviors.same();
+            } else {
+                buyOrderQueue.poll();
+            }
+        }
+
         return Behaviors.same();
+    }
+
+    private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
+        return Trade.newBuilder()
+                .setMakerId(order == buyOrder ? sellOrder.getOrderId() : buyOrder.getOrderId())
+                .setTakerId(order.getOrderId())
+                .setTradingSide(order.getTradingSide())
+                .setAmount(amount)
+                .setPrice(order == buyOrder ? sellOrder.getPrice() : buyOrder.getPrice())
+                .setSellerUserId(sellOrder.getUserId())
+                .setBuyerUserId(buyOrder.getUserId())
+                .setSymbolId(order.getSymbolId())
+                .setDealTime(generateCurrentTimestamp())
+                .build();
     }
 
     private Timestamp generateCurrentTimestamp() {

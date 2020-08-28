@@ -139,6 +139,46 @@ public class MatchActorTest {
         assertTradeEquals(wantTrade, gotTrade);
     }
 
+    @Test
+    public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_less_than_sell_amount_when_match_buy_order() {
+        TestProbe<Trade> probe = testKit.createTestProbe();
+        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
+        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
+        Order sellOder = Order.newBuilder()
+                .setOrderId(1)
+                .setSymbolId(1)
+                .setUserId(1)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setPrice(3)
+                .setAmount(3)
+                .build();
+        Order buyOrder = Order.newBuilder()
+                .setOrderId(2)
+                .setSymbolId(1)
+                .setUserId(2)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setPrice(5)
+                .setAmount(2)
+                .build();
+
+        matchActor.tell(sellOder);
+        matchActor.tell(buyOrder);
+
+        Trade wantTrade = Trade.newBuilder()
+                .setMakerId(sellOder.getOrderId())
+                .setTakerId(buyOrder.getOrderId())
+                .setTradingSide(buyOrder.getTradingSide())
+                .setAmount(buyOrder.getAmount())
+                .setPrice(sellOder.getPrice())
+                .setSellerUserId(sellOder.getUserId())
+                .setBuyerUserId(buyOrder.getUserId())
+                .setSymbolId(buyOrder.getSymbolId())
+                .build();
+        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        assertTradeEquals(wantTrade, gotTrade);
+        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
+    }
+
     private void assertTradeEquals(Trade want, Trade got) {
         Trade wantOverwriteDealTime = want.toBuilder().setDealTime(got.getDealTime()).build();
         Assert.assertEquals(wantOverwriteDealTime, got);
