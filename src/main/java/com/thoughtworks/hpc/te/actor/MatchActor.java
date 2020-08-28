@@ -37,22 +37,23 @@ public class MatchActor extends AbstractBehavior<Order> {
     private Behavior<Order> match(Order order) {
         logger.info("MatchActor handle order {}", order);
         // Todo: 撮合逻辑
-        Trade trade = Trade.newBuilder()
-                .setMakerId(1)
-                .setTakerId(2)
-                .setTradingSide(TradingSide.TRADING_BUY)
-                .setAmount(3)
-                .setPrice(4)
-                .setSellerUserId(5)
-                .setBuyerUserId(6)
-                .setSymbolId(7)
-                .setDealTime(Timestamp.getDefaultInstance())
-                .build();
-        logger.info("Match success, trade {}", trade);
-
-        getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
-
         return Behaviors.same();
+//        Trade trade = Trade.newBuilder()
+//                .setMakerId(1)
+//                .setTakerId(2)
+//                .setTradingSide(TradingSide.TRADING_BUY)
+//                .setAmount(3)
+//                .setPrice(4)
+//                .setSellerUserId(5)
+//                .setBuyerUserId(6)
+//                .setSymbolId(7)
+//                .setDealTime(Timestamp.getDefaultInstance())
+//                .build();
+//        logger.info("Match success, trade {}", trade);
+//
+//        getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+//
+//        return Behaviors.same();
     }
 
     @Override
