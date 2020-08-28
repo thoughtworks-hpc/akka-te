@@ -80,6 +80,8 @@ public class MatchActor extends AbstractBehavior<Order> {
             return Behaviors.same();
         }
 
+        // Todo: 重构下面这三段重复代码
+        // Todo: order中没有撮合成交的部分继续撮合
         // buy order price >= sell order price
         if (buyOrder.getAmount() == sellOrder.getAmount()) {
             Trade trade = generateTrade(order, buyOrder, sellOrder, order.getAmount());
@@ -107,6 +109,18 @@ public class MatchActor extends AbstractBehavior<Order> {
             return Behaviors.same();
         }
 
+        // buy order amount > sell order amount
+        Trade trade = generateTrade(order, buyOrder, sellOrder, sellOrder.getAmount());
+        if (order == buyOrder) {
+            sellOrderQueue.poll();
+        } else {
+            buyOrderQueue.poll();
+            Order newBuyOrder = buyOrder.toBuilder()
+                    .setAmount(buyOrder.getAmount() - sellOrder.getAmount())
+                    .build();
+            buyOrderQueue.add(newBuyOrder);
+        }
+        sendTradeToEventStream(trade);
         return Behaviors.same();
     }
 

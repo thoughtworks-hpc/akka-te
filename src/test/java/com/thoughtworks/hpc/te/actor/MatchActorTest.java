@@ -66,7 +66,7 @@ public class MatchActorTest {
 
         matchActor.tell(buyOrder);
 
-        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder);
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
@@ -79,7 +79,7 @@ public class MatchActorTest {
 
         matchActor.tell(sellOrder);
 
-        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder);
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
@@ -92,7 +92,7 @@ public class MatchActorTest {
 
         matchActor.tell(buyOrder);
 
-        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder);
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
         // Todo: 部分成交，其余部分进入队列，在这里没有测试到
@@ -106,18 +106,32 @@ public class MatchActorTest {
 
         matchActor.tell(sellOrder);
 
-        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder);
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
         // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
 
-    private Trade generateTrade(Order sellOder, Order buyOrder, Order maker) {
+    @Test
+    public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_grater_than_sell_amount_when_match_buy_order() {
+        Order sellOrder = generateSellOrder();
+        Order buyOrder = generateBuyOrder(4);
+        matchActor.tell(sellOrder);
+
+        matchActor.tell(buyOrder);
+
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, sellOrder.getAmount());
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
+        assertTradeEquals(wantTrade, gotTrade);
+        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
+    }
+
+    private Trade generateTrade(Order sellOder, Order buyOrder, Order maker, int amount) {
         return Trade.newBuilder()
                 .setMakerId(maker.getOrderId())
                 .setTakerId(sellOder == maker ? buyOrder.getOrderId() : sellOder.getOrderId())
                 .setTradingSide(maker == sellOder ? buyOrder.getTradingSide() : sellOder.getTradingSide())
-                .setAmount(buyOrder.getAmount())
+                .setAmount(amount)
                 .setPrice(maker.getPrice())
                 .setSellerUserId(sellOder.getUserId())
                 .setBuyerUserId(buyOrder.getUserId())
