@@ -95,7 +95,6 @@ public class MatchActorTest {
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
-        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
 
     @Test
@@ -109,7 +108,6 @@ public class MatchActorTest {
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
-        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
 
     @Test
@@ -123,7 +121,6 @@ public class MatchActorTest {
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, sellOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
-        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
 
     private Trade generateTrade(Order sellOder, Order buyOrder, Order maker, int amount) {
