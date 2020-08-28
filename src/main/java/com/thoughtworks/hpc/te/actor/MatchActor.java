@@ -18,8 +18,8 @@ import java.util.PriorityQueue;
 
 public class MatchActor extends AbstractBehavior<Order> {
     private final Logger logger;
-    private PriorityQueue<Order> buyOrderQueue;
-    private PriorityQueue<Order> sellOrderQueue;
+    private final PriorityQueue<Order> buyOrderQueue;
+    private final PriorityQueue<Order> sellOrderQueue;
 
     private MatchActor(ActorContext<Order> context) {
         super(context);
@@ -80,47 +80,40 @@ public class MatchActor extends AbstractBehavior<Order> {
             return Behaviors.same();
         }
 
-        // Todo: 重构下面这三段重复代码
-        // Todo: order中没有撮合成交的部分继续撮合
         // buy order price >= sell order price
-        if (buyOrder.getAmount() == sellOrder.getAmount()) {
-            Trade trade = generateTrade(order, buyOrder, sellOrder, order.getAmount());
-            if (order == buyOrder) {
-                sellOrderQueue.poll();
-            } else {
-                buyOrderQueue.poll();
-            }
-            sendTradeToEventStream(trade);
-            return Behaviors.same();
-        }
+        Trade trade = generateTrade(order, buyOrder, sellOrder, Math.min(buyOrder.getAmount(), sellOrder.getAmount()));
+        sendTradeToEventStream(trade);
 
-        if (buyOrder.getAmount() < sellOrder.getAmount()) {
-            Trade trade = generateTrade(order, buyOrder, sellOrder, buyOrder.getAmount());
-            if (order == buyOrder) {
-                sellOrderQueue.poll();
-                Order newSellOrder = sellOrder.toBuilder()
-                        .setAmount(sellOrder.getAmount() - buyOrder.getAmount())
-                        .build();
-                sellOrderQueue.add(newSellOrder);
-            } else {
-                buyOrderQueue.poll();
-            }
-            sendTradeToEventStream(trade);
-            return Behaviors.same();
-        }
-
-        // buy order amount > sell order amount
-        Trade trade = generateTrade(order, buyOrder, sellOrder, sellOrder.getAmount());
         if (order == buyOrder) {
             sellOrderQueue.poll();
         } else {
             buyOrderQueue.poll();
-            Order newBuyOrder = buyOrder.toBuilder()
+        }
+
+        if (buyOrder.getAmount() < sellOrder.getAmount()) {
+            Order remainingSellOrder = sellOrder.toBuilder()
+                    .setAmount(sellOrder.getAmount() - buyOrder.getAmount())
+                    .build();
+            if (order == buyOrder) {
+                sellOrderQueue.add(remainingSellOrder);
+                return Behaviors.same();
+            } else {
+                return match(remainingSellOrder);
+            }
+        }
+
+        if (buyOrder.getAmount() > sellOrder.getAmount()) {
+            Order remainingBuyOrder = buyOrder.toBuilder()
                     .setAmount(buyOrder.getAmount() - sellOrder.getAmount())
                     .build();
-            buyOrderQueue.add(newBuyOrder);
+            if (order == buyOrder) {
+                return match(remainingBuyOrder);
+            } else {
+                buyOrderQueue.add(remainingBuyOrder);
+                return Behaviors.same();
+            }
         }
-        sendTradeToEventStream(trade);
+
         return Behaviors.same();
     }
 
@@ -144,7 +137,7 @@ public class MatchActor extends AbstractBehavior<Order> {
                 .build();
     }
 
-    private Timestamp generateCurrentTimestamp() {
+    public static Timestamp generateCurrentTimestamp() {
         long millis = System.currentTimeMillis();
         return Timestamp.newBuilder()
                 .setSeconds(millis / 1000)

@@ -4,6 +4,7 @@ import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.eventstream.EventStream;
+import com.google.protobuf.Timestamp;
 import com.thoughtworks.hpc.te.controller.Order;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
@@ -11,6 +12,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MatchActorTest {
     @ClassRule
@@ -134,6 +138,131 @@ public class MatchActorTest {
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, sellOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
+    }
+
+    @Test
+    public void should_generate_correct_trades_given_a_set_of_orders_when_match() {
+        final int symbolId = 1;
+        final int userA = 1;
+        final int userB = 2;
+        List<Order> orders = new ArrayList<>();
+
+        Timestamp timestamp = MatchActor.generateCurrentTimestamp();
+
+        orders.add(Order.newBuilder()
+                .setOrderId(1)
+                .setSymbolId(symbolId)
+                .setUserId(userA)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setPrice(3)
+                .setAmount(10)
+                .setSubmitTime(timestamp.toBuilder().setSeconds(timestamp.getSeconds() - 2).build())
+                .build());
+
+        orders.add(Order.newBuilder()
+                .setOrderId(2)
+                .setSymbolId(symbolId)
+                .setUserId(userA)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setPrice(5)
+                .setAmount(10)
+                .setSubmitTime(timestamp)
+                .build());
+
+        orders.add(Order.newBuilder()
+                .setOrderId(3)
+                .setSymbolId(symbolId)
+                .setUserId(userA)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setPrice(3)
+                .setAmount(10)
+                .setSubmitTime(timestamp)
+                .build());
+
+        orders.add(Order.newBuilder()
+                .setOrderId(4)
+                .setSymbolId(symbolId)
+                .setUserId(userB)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setPrice(4)
+                .setAmount(5)
+                .setSubmitTime(timestamp)
+                .build());
+
+        orders.add(Order.newBuilder()
+                .setOrderId(5)
+                .setSymbolId(symbolId)
+                .setUserId(userB)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setPrice(4)
+                .setAmount(5)
+                .setSubmitTime(timestamp)
+                .build());
+
+        orders.add(Order.newBuilder()
+                .setOrderId(6)
+                .setSymbolId(symbolId)
+                .setUserId(userB)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setPrice(2)
+                .setAmount(20)
+                .setSubmitTime(timestamp)
+                .build());
+
+        List<Trade> wantTrades = new ArrayList<>();
+        wantTrades.add(Trade.newBuilder()
+                .setMakerId(2)
+                .setTakerId(4)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setAmount(5)
+                .setPrice(5)
+                .setSellerUserId(userB)
+                .setBuyerUserId(userA)
+                .setSymbolId(symbolId)
+                .build());
+
+        wantTrades.add(Trade.newBuilder()
+                .setMakerId(2)
+                .setTakerId(5)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setAmount(5)
+                .setPrice(5)
+                .setSellerUserId(userB)
+                .setBuyerUserId(userA)
+                .setSymbolId(symbolId)
+                .build());
+
+        wantTrades.add(Trade.newBuilder()
+                .setMakerId(1)
+                .setTakerId(6)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setAmount(10)
+                .setPrice(3)
+                .setSellerUserId(userB)
+                .setBuyerUserId(userA)
+                .setSymbolId(symbolId)
+                .build());
+
+        wantTrades.add(Trade.newBuilder()
+                .setMakerId(3)
+                .setTakerId(6)
+                .setTradingSide(TradingSide.TRADING_SELL)
+                .setAmount(10)
+                .setPrice(3)
+                .setSellerUserId(userB)
+                .setBuyerUserId(userA)
+                .setSymbolId(symbolId)
+                .build());
+
+        for (Order order : orders) {
+            matchActor.tell(order);
+        }
+
+        for (Trade wantTrade : wantTrades) {
+            Trade gotTrade = subscriber.expectMessageClass(Trade.class);
+            assertTradeEquals(wantTrade, gotTrade);
+        }
+
     }
 
     private Trade generateTrade(Order sellOder, Order buyOrder, Order maker, int amount) {
