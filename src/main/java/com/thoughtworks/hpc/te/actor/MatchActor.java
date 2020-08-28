@@ -101,24 +101,25 @@ public class MatchActor extends AbstractBehavior<Order> {
                         .setAmount(sellOrder.getAmount() - buyOrder.getAmount())
                         .build();
                 sellOrderQueue.add(newSellOrder);
-                logger.info("Match success, trade {}", trade);
-                getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
-                return Behaviors.same();
             } else {
                 buyOrderQueue.poll();
             }
+            logger.info("Match success, trade {}", trade);
+            getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+            return Behaviors.same();
         }
 
         return Behaviors.same();
     }
 
     private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
+        Order maker = order == buyOrder ? sellOrder : buyOrder;
         return Trade.newBuilder()
-                .setMakerId(order == buyOrder ? sellOrder.getOrderId() : buyOrder.getOrderId())
+                .setMakerId(maker.getOrderId())
                 .setTakerId(order.getOrderId())
                 .setTradingSide(order.getTradingSide())
                 .setAmount(amount)
-                .setPrice(order == buyOrder ? sellOrder.getPrice() : buyOrder.getPrice())
+                .setPrice(maker.getPrice())
                 .setSellerUserId(sellOrder.getUserId())
                 .setBuyerUserId(buyOrder.getUserId())
                 .setSymbolId(order.getSymbolId())

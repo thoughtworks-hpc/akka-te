@@ -42,8 +42,8 @@ public class MatchActorTest {
         TestProbe<Trade> probe = testKit.createTestProbe();
         testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
         ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).setPrice(6).build());
+
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).setPrice(5).build());
 
         probe.expectNoMessage();
@@ -54,8 +54,8 @@ public class MatchActorTest {
         TestProbe<Trade> probe = testKit.createTestProbe();
         testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
         ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).setPrice(5).build());
+
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).setPrice(6).build());
 
         probe.expectNoMessage();
@@ -66,36 +66,13 @@ public class MatchActorTest {
         TestProbe<Trade> probe = testKit.createTestProbe();
         testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
         ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-        Order sellOder = Order.newBuilder()
-                .setOrderId(1)
-                .setSymbolId(1)
-                .setUserId(1)
-                .setTradingSide(TradingSide.TRADING_SELL)
-                .setPrice(3)
-                .setAmount(3)
-                .build();
-        Order buyOrder = Order.newBuilder()
-                .setOrderId(2)
-                .setSymbolId(1)
-                .setUserId(2)
-                .setTradingSide(TradingSide.TRADING_BUY)
-                .setPrice(5)
-                .setAmount(3)
-                .build();
+        Order sellOrder = generateSellOrder();
+        Order buyOrder = generateBuyOrder(3);
+        matchActor.tell(sellOrder);
 
-        matchActor.tell(sellOder);
         matchActor.tell(buyOrder);
 
-        Trade wantTrade = Trade.newBuilder()
-                .setMakerId(sellOder.getOrderId())
-                .setTakerId(buyOrder.getOrderId())
-                .setTradingSide(buyOrder.getTradingSide())
-                .setAmount(buyOrder.getAmount())
-                .setPrice(sellOder.getPrice())
-                .setSellerUserId(sellOder.getUserId())
-                .setBuyerUserId(buyOrder.getUserId())
-                .setSymbolId(buyOrder.getSymbolId())
-                .build();
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder);
         Trade gotTrade = probe.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
@@ -105,36 +82,13 @@ public class MatchActorTest {
         TestProbe<Trade> probe = testKit.createTestProbe();
         testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
         ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-        Order sellOder = Order.newBuilder()
-                .setOrderId(1)
-                .setSymbolId(1)
-                .setUserId(1)
-                .setTradingSide(TradingSide.TRADING_SELL)
-                .setPrice(3)
-                .setAmount(3)
-                .build();
-        Order buyOrder = Order.newBuilder()
-                .setOrderId(2)
-                .setSymbolId(1)
-                .setUserId(2)
-                .setTradingSide(TradingSide.TRADING_BUY)
-                .setPrice(5)
-                .setAmount(3)
-                .build();
-
+        Order sellOrder = generateSellOrder();
+        Order buyOrder = generateBuyOrder(3);
         matchActor.tell(buyOrder);
-        matchActor.tell(sellOder);
 
-        Trade wantTrade = Trade.newBuilder()
-                .setMakerId(buyOrder.getOrderId())
-                .setTakerId(sellOder.getOrderId())
-                .setTradingSide(sellOder.getTradingSide())
-                .setAmount(buyOrder.getAmount())
-                .setPrice(buyOrder.getPrice())
-                .setSellerUserId(sellOder.getUserId())
-                .setBuyerUserId(buyOrder.getUserId())
-                .setSymbolId(buyOrder.getSymbolId())
-                .build();
+        matchActor.tell(sellOrder);
+
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder);
         Trade gotTrade = probe.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
@@ -144,7 +98,61 @@ public class MatchActorTest {
         TestProbe<Trade> probe = testKit.createTestProbe();
         testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
         ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-        Order sellOder = Order.newBuilder()
+        Order sellOrder = generateSellOrder();
+        Order buyOrder = generateBuyOrder(2);
+        matchActor.tell(sellOrder);
+
+        matchActor.tell(buyOrder);
+
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder);
+        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        assertTradeEquals(wantTrade, gotTrade);
+        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
+    }
+
+    @Test
+    public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_less_than_sell_amount_when_match_sell_order() {
+        TestProbe<Trade> probe = testKit.createTestProbe();
+        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
+        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
+        Order sellOrder = generateSellOrder();
+        Order buyOrder = generateBuyOrder(2);
+        matchActor.tell(buyOrder);
+
+        matchActor.tell(sellOrder);
+
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder);
+        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        assertTradeEquals(wantTrade, gotTrade);
+        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
+    }
+
+    private Trade generateTrade(Order sellOder, Order buyOrder, Order maker) {
+        return Trade.newBuilder()
+                .setMakerId(maker.getOrderId())
+                .setTakerId(sellOder == maker ? buyOrder.getOrderId() : sellOder.getOrderId())
+                .setTradingSide(maker == sellOder ? buyOrder.getTradingSide() : sellOder.getTradingSide())
+                .setAmount(buyOrder.getAmount())
+                .setPrice(maker.getPrice())
+                .setSellerUserId(sellOder.getUserId())
+                .setBuyerUserId(buyOrder.getUserId())
+                .setSymbolId(buyOrder.getSymbolId())
+                .build();
+    }
+
+    private Order generateBuyOrder(int amount) {
+        return Order.newBuilder()
+                .setOrderId(2)
+                .setSymbolId(1)
+                .setUserId(2)
+                .setTradingSide(TradingSide.TRADING_BUY)
+                .setPrice(5)
+                .setAmount(amount)
+                .build();
+    }
+
+    private Order generateSellOrder() {
+        return Order.newBuilder()
                 .setOrderId(1)
                 .setSymbolId(1)
                 .setUserId(1)
@@ -152,31 +160,6 @@ public class MatchActorTest {
                 .setPrice(3)
                 .setAmount(3)
                 .build();
-        Order buyOrder = Order.newBuilder()
-                .setOrderId(2)
-                .setSymbolId(1)
-                .setUserId(2)
-                .setTradingSide(TradingSide.TRADING_BUY)
-                .setPrice(5)
-                .setAmount(2)
-                .build();
-
-        matchActor.tell(sellOder);
-        matchActor.tell(buyOrder);
-
-        Trade wantTrade = Trade.newBuilder()
-                .setMakerId(sellOder.getOrderId())
-                .setTakerId(buyOrder.getOrderId())
-                .setTradingSide(buyOrder.getTradingSide())
-                .setAmount(buyOrder.getAmount())
-                .setPrice(sellOder.getPrice())
-                .setSellerUserId(sellOder.getUserId())
-                .setBuyerUserId(buyOrder.getUserId())
-                .setSymbolId(buyOrder.getSymbolId())
-                .build();
-        Trade gotTrade = probe.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
-        // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
 
     private void assertTradeEquals(Trade want, Trade got) {
