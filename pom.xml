@@ -8,22 +8,24 @@
 
     <properties>
         <akka.version>2.6.8</akka.version>
+        <akka.binary.version>2.13</akka.binary.version>
+        <grpc.version>1.31.1</grpc.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor-typed_2.13</artifactId>
+            <artifactId>akka-actor-typed_${akka.binary.version}</artifactId>
             <version>${akka.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-typed_2.13</artifactId>
+            <artifactId>akka-cluster-typed_${akka.binary.version}</artifactId>
             <version>${akka.version}</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-serialization-jackson_2.13</artifactId>
+            <artifactId>akka-serialization-jackson_${akka.binary.version}</artifactId>
             <version>${akka.version}</version>
         </dependency>
         <dependency>
@@ -33,7 +35,7 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor-testkit-typed_2.13</artifactId>
+            <artifactId>akka-actor-testkit-typed_${akka.binary.version}</artifactId>
             <version>${akka.version}</version>
             <scope>test</scope>
         </dependency>
@@ -47,22 +49,22 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
-            <version>1.31.1</version>
+            <version>${grpc.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>1.31.1</version>
+            <version>${grpc.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-            <version>1.31.1</version>
+            <version>${grpc.version}</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-services</artifactId>
-            <version>1.31.1</version>
+            <version>${grpc.version}</version>
         </dependency>
         <dependency> <!-- necessary for Java 9+ -->
             <groupId>org.apache.tomcat</groupId>
