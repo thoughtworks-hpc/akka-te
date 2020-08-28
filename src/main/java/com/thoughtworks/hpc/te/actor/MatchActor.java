@@ -88,8 +88,7 @@ public class MatchActor extends AbstractBehavior<Order> {
             } else {
                 buyOrderQueue.poll();
             }
-            logger.info("Match success, trade {}", trade);
-            getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+            sendTradeToEventStream(trade);
             return Behaviors.same();
         }
 
@@ -104,12 +103,16 @@ public class MatchActor extends AbstractBehavior<Order> {
             } else {
                 buyOrderQueue.poll();
             }
-            logger.info("Match success, trade {}", trade);
-            getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+            sendTradeToEventStream(trade);
             return Behaviors.same();
         }
 
         return Behaviors.same();
+    }
+
+    private void sendTradeToEventStream(Trade trade) {
+        logger.info("Match success, trade {}", trade);
+        getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
     }
 
     private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
