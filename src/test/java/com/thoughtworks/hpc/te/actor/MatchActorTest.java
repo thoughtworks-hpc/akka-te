@@ -8,6 +8,7 @@ import com.thoughtworks.hpc.te.controller.Order;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -15,57 +16,50 @@ public class MatchActorTest {
     @ClassRule
     public static final TestKitJunitResource testKit = new TestKitJunitResource();
 
+    TestProbe<Trade> subscriber;
+    ActorRef<Order> matchActor;
+
+    @Before
+    public void setUp() {
+        subscriber = testKit.createTestProbe();
+        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, subscriber.ref()));
+        matchActor = testKit.spawn(MatchActor.create(1));
+    }
+
     @Test
     public void should_not_generate_trade_given_sell_queue_empty_when_match_buy_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).build());
 
-        probe.expectNoMessage();
+        subscriber.expectNoMessage();
     }
 
     @Test
     public void should_not_generate_trade_given_buy_queue_empty_when_match_sell_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
-
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).build());
 
-        probe.expectNoMessage();
+        subscriber.expectNoMessage();
     }
 
     @Test
     public void should_not_generate_trade_given_head_sell_price_grater_then_buy_order_when_math_buy_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).setPrice(6).build());
 
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).setPrice(5).build());
 
-        probe.expectNoMessage();
+        subscriber.expectNoMessage();
     }
 
     @Test
     public void should_not_generate_trade_given_head_buy_price_less_then_sell_order_when_math_sell_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).setPrice(5).build());
 
         matchActor.tell(Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).setPrice(6).build());
 
-        probe.expectNoMessage();
+        subscriber.expectNoMessage();
     }
 
     @Test
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_have_same_amount_when_match_buy_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(3);
         matchActor.tell(sellOrder);
@@ -73,15 +67,12 @@ public class MatchActorTest {
         matchActor.tell(buyOrder);
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder);
-        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
     @Test
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_have_same_amount_when_match_sell_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(3);
         matchActor.tell(buyOrder);
@@ -89,15 +80,12 @@ public class MatchActorTest {
         matchActor.tell(sellOrder);
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder);
-        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
     @Test
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_less_than_sell_amount_when_match_buy_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(2);
         matchActor.tell(sellOrder);
@@ -105,16 +93,13 @@ public class MatchActorTest {
         matchActor.tell(buyOrder);
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder);
-        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
         // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
 
     @Test
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_less_than_sell_amount_when_match_sell_order() {
-        TestProbe<Trade> probe = testKit.createTestProbe();
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, probe.ref()));
-        ActorRef<Order> matchActor = testKit.spawn(MatchActor.create(1));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(2);
         matchActor.tell(buyOrder);
@@ -122,7 +107,7 @@ public class MatchActorTest {
         matchActor.tell(sellOrder);
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder);
-        Trade gotTrade = probe.expectMessageClass(Trade.class);
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
         // Todo: 部分成交，其余部分进入队列，在这里没有测试到
     }
