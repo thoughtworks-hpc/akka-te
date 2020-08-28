@@ -111,7 +111,7 @@ public class MatchActorTest {
     }
 
     @Test
-    public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_grater_than_sell_amount_when_match_buy_order() {
+    public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_greater_than_sell_amount_when_match_buy_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(4);
         matchActor.tell(sellOrder);
@@ -119,6 +119,19 @@ public class MatchActorTest {
         matchActor.tell(buyOrder);
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, sellOrder.getAmount());
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
+        assertTradeEquals(wantTrade, gotTrade);
+    }
+
+    @Test
+    public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_greater_than_sell_amount_when_match_sell_order() {
+        Order sellOrder = generateSellOrder();
+        Order buyOrder = generateBuyOrder(4);
+        matchActor.tell(buyOrder);
+
+        matchActor.tell(sellOrder);
+
+        Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, sellOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
