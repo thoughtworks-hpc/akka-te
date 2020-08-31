@@ -35,7 +35,7 @@ public class TradeForwarderActor extends AbstractBehavior<Trade> {
     private Behavior<Trade> onTrade(Trade trade) {
         responseObserver.onNext(trade);
         // Todo: 这里需要处理如果客户端断开了的情况
-        getContext().getLog().info("Send trade to client");
+        getContext().getLog().info("Send trade {} to client", trade);
         return this;
     }
 
