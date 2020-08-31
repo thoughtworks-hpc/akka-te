@@ -40,7 +40,7 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
                     // TODO: 处理actor找不到的情况
                     system.log().error("Related match actor not found, symbol_id {}", order.getSymbolId());
                 }
-                serviceInstances.forEach(actor -> actor.tell(new MatchActor.MatchOrder(order)));
+                serviceInstances.forEach(actor -> actor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order))));
             }
 
             throw new RuntimeException("not what I wanted");

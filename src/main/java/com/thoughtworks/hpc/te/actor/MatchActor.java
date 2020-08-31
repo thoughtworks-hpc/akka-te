@@ -9,10 +9,10 @@ import akka.actor.typed.javadsl.Receive;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
 import com.google.protobuf.Timestamp;
-import com.thoughtworks.hpc.te.CborSerializable;
-import com.thoughtworks.hpc.te.controller.Order;
+import com.thoughtworks.hpc.te.domain.CborSerializable;
 import com.thoughtworks.hpc.te.controller.Trade;
-import com.thoughtworks.hpc.te.controller.TradingSide;
+import com.thoughtworks.hpc.te.domain.Order;
+import com.thoughtworks.hpc.te.domain.TradingSide;
 import org.slf4j.Logger;
 
 import java.util.PriorityQueue;
@@ -26,15 +26,14 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     }
 
     public static final class MatchOrder implements Command {
-        // Todo: 不知道在gRPC的数据结构在akka序列化中是否有问题
-        private final Order order;
+        public Order order;
+
+        // need for Akka to deserialize
+        public MatchOrder() {
+        }
 
         public MatchOrder(Order order) {
             this.order = order;
-        }
-
-        public Order getOrder() {
-            return order;
         }
     }
 
@@ -48,7 +47,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 return o2.getPrice() - o1.getPrice();
             }
             // time ASC
-            return (int) (o1.getSubmitTime().getSeconds() - o2.getSubmitTime().getSeconds());
+            return (int) (o1.getSubmitTime() - o2.getSubmitTime());
         });
         sellOrderQueue = new PriorityQueue<>(((o1, o2) -> {
             if (o1.getPrice() != o2.getPrice()) {
@@ -56,7 +55,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 return o1.getPrice() - o2.getPrice();
             }
             // time ASC
-            return (int) (o1.getSubmitTime().getSeconds() - o2.getSubmitTime().getSeconds());
+            return (int) (o1.getSubmitTime() - o2.getSubmitTime());
         }));
     }
 
@@ -73,7 +72,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
 
     private Behavior<Command> match(MatchOrder matchOrder) {
-        Order order = matchOrder.getOrder();
+        Order order = matchOrder.order;
         logger.info("MatchActor handle order {}", order);
         Order buyOrder;
         Order sellOrder;
@@ -109,9 +108,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }
 
         if (buyOrder.getAmount() < sellOrder.getAmount()) {
-            Order remainingSellOrder = sellOrder.toBuilder()
-                    .setAmount(sellOrder.getAmount() - buyOrder.getAmount())
-                    .build();
+            Order remainingSellOrder = Order.newWithDifferentAmount(sellOrder, sellOrder.getAmount() - buyOrder.getAmount());
             if (order == buyOrder) {
                 sellOrderQueue.add(remainingSellOrder);
                 return Behaviors.same();
@@ -121,9 +118,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }
 
         if (buyOrder.getAmount() > sellOrder.getAmount()) {
-            Order remainingBuyOrder = buyOrder.toBuilder()
-                    .setAmount(buyOrder.getAmount() - sellOrder.getAmount())
-                    .build();
+            Order remainingBuyOrder = Order.newWithDifferentAmount(buyOrder, buyOrder.getAmount() - sellOrder.getAmount());
             if (order == buyOrder) {
                 return match(new MatchOrder(remainingBuyOrder));
             } else {
@@ -140,12 +135,15 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
     }
 
+    // Todo: 可能并不需要在这里生成trade
     private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
         Order maker = order == buyOrder ? sellOrder : buyOrder;
+        com.thoughtworks.hpc.te.controller.TradingSide tradingSide;
+        tradingSide = com.thoughtworks.hpc.te.controller.TradingSide.valueOf(order.getTradingSide().toString());
         return Trade.newBuilder()
                 .setMakerId(maker.getOrderId())
                 .setTakerId(order.getOrderId())
-                .setTradingSide(order.getTradingSide())
+                .setTradingSide(tradingSide)
                 .setAmount(amount)
                 .setPrice(maker.getPrice())
                 .setSellerUserId(sellOrder.getUserId())

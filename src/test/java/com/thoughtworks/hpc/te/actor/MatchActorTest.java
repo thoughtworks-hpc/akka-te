@@ -34,7 +34,7 @@ public class MatchActorTest {
     public void should_not_generate_trade_given_sell_queue_empty_when_match_buy_order() {
         Order order = Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).build();
 
-        matchActor.tell(new MatchActor.MatchOrder(order));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order)));
 
         subscriber.expectNoMessage();
     }
@@ -43,7 +43,7 @@ public class MatchActorTest {
     public void should_not_generate_trade_given_buy_queue_empty_when_match_sell_order() {
         Order order = Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).build();
 
-        matchActor.tell(new MatchActor.MatchOrder(order));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order)));
 
         subscriber.expectNoMessage();
     }
@@ -51,10 +51,10 @@ public class MatchActorTest {
     @Test
     public void should_not_generate_trade_given_head_sell_price_grater_then_buy_order_when_math_buy_order() {
         Order sellOrder = Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).setPrice(6).build();
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
         Order buyOrder = Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).setPrice(5).build();
 
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
         subscriber.expectNoMessage();
     }
@@ -62,10 +62,10 @@ public class MatchActorTest {
     @Test
     public void should_not_generate_trade_given_head_buy_price_less_then_sell_order_when_math_sell_order() {
         Order buyOrder = Order.newBuilder().setTradingSide(TradingSide.TRADING_BUY).setPrice(5).build();
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
         Order sellOrder = Order.newBuilder().setTradingSide(TradingSide.TRADING_SELL).setPrice(6).build();
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
         subscriber.expectNoMessage();
     }
@@ -74,9 +74,9 @@ public class MatchActorTest {
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_have_same_amount_when_match_buy_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(3);
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
@@ -87,9 +87,9 @@ public class MatchActorTest {
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_have_same_amount_when_match_sell_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(3);
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
@@ -100,9 +100,9 @@ public class MatchActorTest {
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_less_than_sell_amount_when_match_buy_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(2);
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
@@ -113,9 +113,9 @@ public class MatchActorTest {
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_less_than_sell_amount_when_match_sell_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(2);
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
@@ -126,9 +126,9 @@ public class MatchActorTest {
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_greater_than_sell_amount_when_match_buy_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(4);
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, sellOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
@@ -139,9 +139,9 @@ public class MatchActorTest {
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_greater_than_sell_amount_when_match_sell_order() {
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(4);
-        matchActor.tell(new MatchActor.MatchOrder(buyOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(buyOrder)));
 
-        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+        matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(sellOrder)));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, sellOrder.getAmount());
         Trade gotTrade = subscriber.expectMessageClass(Trade.class);
@@ -263,7 +263,7 @@ public class MatchActorTest {
                 .build());
 
         for (Order order : orders) {
-            matchActor.tell(new MatchActor.MatchOrder(order));
+            matchActor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order)));
         }
 
         for (Trade wantTrade : wantTrades) {
