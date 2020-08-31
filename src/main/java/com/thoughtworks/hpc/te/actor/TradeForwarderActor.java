@@ -9,6 +9,8 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import akka.actor.typed.pubsub.Topic;
 import com.thoughtworks.hpc.te.controller.Trade;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
@@ -49,8 +51,16 @@ public class TradeForwarderActor extends AbstractBehavior<Trade> {
     }
 
     private Behavior<Trade> onTrade(Trade trade) {
-        responseObserver.onNext(trade);
-        // Todo: 这里需要处理如果客户端断开了的情况
+        try {
+            responseObserver.onNext(trade);
+        } catch (StatusRuntimeException e) {
+            logger.error("Send trade: {} to client failed. status: {}", trade, e.getStatus());
+            if (e.getStatus().getCode() == Status.Code.CANCELLED) {
+                // stop actor when gRPC connection cancelled
+                return Behaviors.stopped();
+            }
+            return this;
+        }
         logger.info("Send trade {} to client", trade);
         return this;
     }
