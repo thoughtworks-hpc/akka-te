@@ -5,6 +5,8 @@ import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.AskPattern;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
+import akka.cluster.Member;
+import akka.cluster.typed.Cluster;
 import com.google.protobuf.Empty;
 import com.thoughtworks.hpc.te.actor.MatchActor;
 import com.thoughtworks.hpc.te.actor.RootActor;
@@ -52,6 +54,12 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
 
     @Override
     public void subscribeMatchResult(Empty request, StreamObserver<Trade> responseObserver) {
+        Member selfMember = Cluster.get(system).selfMember();
+        if (!selfMember.hasRole("gateway")) {
+            responseObserver.onError(io.grpc.Status.UNAVAILABLE.withDescription("Current node are not gateway, can not subscribe.").asException());
+            return;
+        }
+
         system.tell(new RootActor.CreateTradeForwarder(responseObserver));
     }
 }
