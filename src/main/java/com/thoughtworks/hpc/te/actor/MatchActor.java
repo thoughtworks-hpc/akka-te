@@ -9,6 +9,7 @@ import akka.actor.typed.javadsl.Receive;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
 import com.google.protobuf.Timestamp;
+import com.thoughtworks.hpc.te.CborSerializable;
 import com.thoughtworks.hpc.te.controller.Order;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
@@ -16,12 +17,28 @@ import org.slf4j.Logger;
 
 import java.util.PriorityQueue;
 
-public class MatchActor extends AbstractBehavior<Order> {
+public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     private final Logger logger;
     private final PriorityQueue<Order> buyOrderQueue;
     private final PriorityQueue<Order> sellOrderQueue;
 
-    private MatchActor(ActorContext<Order> context) {
+    public interface Command extends CborSerializable {
+    }
+
+    public static final class MatchOrder implements Command {
+        // Todo: 不知道在gRPC的数据结构在akka序列化中是否有问题
+        private final Order order;
+
+        public MatchOrder(Order order) {
+            this.order = order;
+        }
+
+        public Order getOrder() {
+            return order;
+        }
+    }
+
+    private MatchActor(ActorContext<Command> context) {
         super(context);
         logger = getContext().getLog();
 
@@ -43,19 +60,20 @@ public class MatchActor extends AbstractBehavior<Order> {
         }));
     }
 
-    public static Behavior<Order> create(int symbolId) {
+    public static Behavior<Command> create(int symbolId) {
         return Behaviors.setup(context -> {
             context.getSystem().receptionist().tell(Receptionist.register(generateServiceKey(symbolId), context.getSelf()));
             return new MatchActor(context);
         });
     }
 
-    public static ServiceKey<Order> generateServiceKey(int symbolId) {
-        return ServiceKey.create(Order.class, "symbol_" + symbolId);
+    public static ServiceKey<Command> generateServiceKey(int symbolId) {
+        return ServiceKey.create(Command.class, "symbol_" + symbolId);
     }
 
 
-    private Behavior<Order> match(Order order) {
+    private Behavior<Command> match(MatchOrder matchOrder) {
+        Order order = matchOrder.getOrder();
         logger.info("MatchActor handle order {}", order);
         Order buyOrder;
         Order sellOrder;
@@ -98,7 +116,7 @@ public class MatchActor extends AbstractBehavior<Order> {
                 sellOrderQueue.add(remainingSellOrder);
                 return Behaviors.same();
             } else {
-                return match(remainingSellOrder);
+                return match(new MatchOrder(remainingSellOrder));
             }
         }
 
@@ -107,7 +125,7 @@ public class MatchActor extends AbstractBehavior<Order> {
                     .setAmount(buyOrder.getAmount() - sellOrder.getAmount())
                     .build();
             if (order == buyOrder) {
-                return match(remainingBuyOrder);
+                return match(new MatchOrder(remainingBuyOrder));
             } else {
                 buyOrderQueue.add(remainingBuyOrder);
                 return Behaviors.same();
@@ -154,7 +172,7 @@ public class MatchActor extends AbstractBehavior<Order> {
     }
 
     @Override
-    public Receive<Order> createReceive() {
-        return newReceiveBuilder().onMessage(Order.class, this::match).build();
+    public Receive<Command> createReceive() {
+        return newReceiveBuilder().onMessage(MatchOrder.class, this::match).build();
     }
 }
