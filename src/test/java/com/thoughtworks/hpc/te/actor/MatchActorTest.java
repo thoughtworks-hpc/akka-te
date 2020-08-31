@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+// Todo: 使用domain的Order，而不是protobuf的Order
 public class MatchActorTest {
     @ClassRule
     public static final TestKitJunitResource testKit = new TestKitJunitResource();

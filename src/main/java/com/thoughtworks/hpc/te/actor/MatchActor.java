@@ -13,6 +13,8 @@ import com.thoughtworks.hpc.te.domain.CborSerializable;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.domain.Order;
 import com.thoughtworks.hpc.te.domain.TradingSide;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 
 import java.util.PriorityQueue;
@@ -25,16 +27,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     public interface Command extends CborSerializable {
     }
 
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static final class MatchOrder implements Command {
         public Order order;
-
-        // need for Akka to deserialize
-        public MatchOrder() {
-        }
-
-        public MatchOrder(Order order) {
-            this.order = order;
-        }
     }
 
     private MatchActor(ActorContext<Command> context) {
@@ -108,7 +104,9 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }
 
         if (buyOrder.getAmount() < sellOrder.getAmount()) {
-            Order remainingSellOrder = Order.newWithDifferentAmount(sellOrder, sellOrder.getAmount() - buyOrder.getAmount());
+            Order remainingSellOrder = sellOrder.toBuilder()
+                    .amount(sellOrder.getAmount() - buyOrder.getAmount())
+                    .build();
             if (order == buyOrder) {
                 sellOrderQueue.add(remainingSellOrder);
                 return Behaviors.same();
@@ -118,7 +116,9 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }
 
         if (buyOrder.getAmount() > sellOrder.getAmount()) {
-            Order remainingBuyOrder = Order.newWithDifferentAmount(buyOrder, buyOrder.getAmount() - sellOrder.getAmount());
+            Order remainingBuyOrder = buyOrder.toBuilder()
+                    .amount(buyOrder.getAmount() - sellOrder.getAmount())
+                    .build();
             if (order == buyOrder) {
                 return match(new MatchOrder(remainingBuyOrder));
             } else {
