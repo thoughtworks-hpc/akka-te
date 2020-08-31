@@ -4,6 +4,7 @@ import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.eventstream.EventStream;
+import akka.actor.typed.pubsub.Topic;
 import com.google.protobuf.Timestamp;
 import com.thoughtworks.hpc.te.controller.Order;
 import com.thoughtworks.hpc.te.controller.Trade;
@@ -27,8 +28,9 @@ public class MatchActorTest {
     @Before
     public void setUp() {
         subscriber = testKit.createTestProbe(Trade.class);
-        testKit.system().eventStream().tell(new EventStream.Subscribe<>(Trade.class, subscriber.ref()));
-        matchActor = testKit.spawn(MatchActor.create(1));
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, "test-topic"));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        matchActor = testKit.spawn(MatchActor.create(1, topic));
     }
 
     @Test

@@ -1,16 +1,17 @@
 package com.thoughtworks.hpc.te.actor;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
-import akka.actor.typed.eventstream.EventStream;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import akka.actor.typed.pubsub.Topic;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
 import com.google.protobuf.Timestamp;
-import com.thoughtworks.hpc.te.domain.CborSerializable;
 import com.thoughtworks.hpc.te.controller.Trade;
+import com.thoughtworks.hpc.te.domain.CborSerializable;
 import com.thoughtworks.hpc.te.domain.Order;
 import com.thoughtworks.hpc.te.domain.TradingSide;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     private final Logger logger;
     private final PriorityQueue<Order> buyOrderQueue;
     private final PriorityQueue<Order> sellOrderQueue;
+    private final ActorRef<Topic.Command<Trade>> topic;
 
     public interface Command extends CborSerializable {
     }
@@ -33,9 +35,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         public Order order;
     }
 
-    private MatchActor(ActorContext<Command> context) {
+    private MatchActor(ActorContext<Command> context, ActorRef<Topic.Command<Trade>> topic) {
         super(context);
         logger = getContext().getLog();
+        this.topic = topic;
 
         buyOrderQueue = new PriorityQueue<>((o1, o2) -> {
             if (o1.getPrice() != o2.getPrice()) {
@@ -55,10 +58,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }));
     }
 
-    public static Behavior<Command> create(int symbolId) {
+    public static Behavior<Command> create(int symbolId, ActorRef<Topic.Command<Trade>> topic) {
         return Behaviors.setup(context -> {
             context.getSystem().receptionist().tell(Receptionist.register(generateServiceKey(symbolId), context.getSelf()));
-            return new MatchActor(context);
+            return new MatchActor(context, topic);
         });
     }
 
@@ -132,7 +135,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
     private void sendTradeToEventStream(Trade trade) {
         logger.info("Match success, trade {}", trade);
-        getContext().getSystem().eventStream().tell(new EventStream.Publish<>(trade));
+        topic.tell(Topic.publish(trade));
     }
 
     // Todo: 可能并不需要在这里生成trade
