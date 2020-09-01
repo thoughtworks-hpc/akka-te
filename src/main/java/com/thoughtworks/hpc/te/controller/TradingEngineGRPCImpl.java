@@ -39,7 +39,6 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
             if (listing != null && listing.isForKey(serviceKey)) {
                 Set<ActorRef<MatchActor.Command>> serviceInstances = listing.getServiceInstances(serviceKey);
                 if (serviceInstances.isEmpty()) {
-                    // TODO: 处理actor找不到的情况
                     system.log().error("Related match actor not found, symbol_id {}", order.getSymbolId());
                 }
                 serviceInstances.forEach(actor -> actor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order))));

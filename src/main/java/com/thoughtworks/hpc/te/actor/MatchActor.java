@@ -138,7 +138,6 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         topic.tell(Topic.publish(trade));
     }
 
-    // Todo: 可能并不需要在这里生成trade
     private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
         Order maker = order == buyOrder ? sellOrder : buyOrder;
         com.thoughtworks.hpc.te.controller.TradingSide tradingSide;
