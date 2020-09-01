@@ -23,20 +23,12 @@ public class MatchActorTest {
     @ClassRule
     public static final TestKitJunitResource testKit = new TestKitJunitResource();
 
-    TestProbe<Trade> subscriber;
-    ActorRef<Topic.Command<Trade>> topic;
-    ActorRef<MatchActor.Command> matchActor;
-
-    @Before
-    public void setUp() {
-        subscriber = testKit.createTestProbe(Trade.class);
-        topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
-        topic.tell(Topic.subscribe(subscriber.getRef()));
-        matchActor = testKit.spawn(MatchActor.create(1, topic));
-    }
-
     @Test
     public void should_not_generate_trade_given_sell_queue_empty_when_match_buy_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order order = Order.builder().tradingSide(TRADING_BUY).build();
 
         matchActor.tell(new MatchActor.MatchOrder(order));
@@ -46,6 +38,10 @@ public class MatchActorTest {
 
     @Test
     public void should_not_generate_trade_given_buy_queue_empty_when_match_sell_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order order = Order.builder().tradingSide(TRADING_SELL).build();
 
         matchActor.tell(new MatchActor.MatchOrder(order));
@@ -55,6 +51,10 @@ public class MatchActorTest {
 
     @Test
     public void should_not_generate_trade_given_head_sell_price_grater_then_buy_order_when_math_buy_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = Order.builder().tradingSide(TRADING_SELL).price(6).build();
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
         Order buyOrder = Order.builder().tradingSide(TRADING_BUY).price(5).build();
@@ -66,6 +66,10 @@ public class MatchActorTest {
 
     @Test
     public void should_not_generate_trade_given_head_buy_price_less_then_sell_order_when_math_sell_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order buyOrder = Order.builder().tradingSide(TRADING_BUY).price(5).build();
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
         Order sellOrder = Order.builder().tradingSide(TRADING_SELL).price(6).build();
@@ -77,6 +81,10 @@ public class MatchActorTest {
 
     @Test
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_have_same_amount_when_match_buy_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(3);
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
@@ -90,6 +98,10 @@ public class MatchActorTest {
 
     @Test
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_have_same_amount_when_match_sell_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(3);
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
@@ -103,6 +115,10 @@ public class MatchActorTest {
 
     @Test
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_less_than_sell_amount_when_match_buy_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(2);
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
@@ -116,6 +132,10 @@ public class MatchActorTest {
 
     @Test
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_less_than_sell_amount_when_match_sell_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(2);
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
@@ -129,6 +149,10 @@ public class MatchActorTest {
 
     @Test
     public void should_generate_correct_trade_given_head_sell_price_less_than_buy_order_and_buy_amount_greater_than_sell_amount_when_match_buy_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(4);
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
@@ -142,6 +166,10 @@ public class MatchActorTest {
 
     @Test
     public void should_generate_correct_trade_given_head_buy_price_greater_than_sell_order_and_buy_amount_greater_than_sell_amount_when_match_sell_order() {
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
         Order sellOrder = generateSellOrder();
         Order buyOrder = generateBuyOrder(4);
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
@@ -159,6 +187,10 @@ public class MatchActorTest {
         final int userA = 1;
         final int userB = 2;
         List<Order> orders = new ArrayList<>();
+        TestProbe<Trade> subscriber = testKit.createTestProbe(Trade.class);
+        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
+        topic.tell(Topic.subscribe(subscriber.getRef()));
+        ActorRef<MatchActor.Command> matchActor = testKit.spawn(MatchActor.create(1, topic));
 
         long millis = System.currentTimeMillis();
 
