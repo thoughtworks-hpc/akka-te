@@ -8,7 +8,6 @@ import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
 import com.thoughtworks.hpc.te.domain.MatchActor;
 import com.thoughtworks.hpc.te.domain.Order;
-import java.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -40,7 +39,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(order));
 
-        subscriber.expectNoMessage(Duration.ofSeconds(5));
+        subscriber.expectNoMessage();
     }
 
     @Test
@@ -49,7 +48,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(order));
 
-        subscriber.expectNoMessage(Duration.ofSeconds(5));
+        subscriber.expectNoMessage();
     }
 
     @Test
@@ -60,7 +59,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
-        subscriber.expectNoMessage(Duration.ofSeconds(5));
+        subscriber.expectNoMessage();
     }
 
     @Test
@@ -71,7 +70,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
-        subscriber.expectNoMessage(Duration.ofSeconds(5));
+        subscriber.expectNoMessage();
     }
 
     @Test
@@ -83,7 +82,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
@@ -96,7 +95,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
@@ -109,7 +108,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
@@ -122,7 +121,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
@@ -135,7 +134,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, sellOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
@@ -148,7 +147,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, sellOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
         assertTradeEquals(wantTrade, gotTrade);
     }
 
@@ -271,7 +270,7 @@ public class MatchActorTest {
         }
 
         for (Trade wantTrade : wantTrades) {
-            Trade gotTrade = subscriber.expectMessageClass(Trade.class, Duration.ofSeconds(5));
+            Trade gotTrade = subscriber.expectMessageClass(Trade.class);
             assertTradeEquals(wantTrade, gotTrade);
         }
 
