@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.thoughtworks.hpc.te.domain.TradingSide.*;
 
@@ -29,10 +30,7 @@ public class MatchActorTest {
     @Before
     public void setUp() {
         subscriber = testKit.createTestProbe(Trade.class);
-        if (topic != null) {
-            testKit.stop(topic);
-        }
-        topic = testKit.spawn(Topic.create(Trade.class, "test-topic"));
+        topic = testKit.spawn(Topic.create(Trade.class, UUID.randomUUID().toString()));
         topic.tell(Topic.subscribe(subscriber.getRef()));
         matchActor = testKit.spawn(MatchActor.create(1, topic));
     }
