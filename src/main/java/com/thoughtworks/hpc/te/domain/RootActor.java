@@ -18,7 +18,8 @@ public class RootActor extends AbstractBehavior<RootActor.Command> {
     private final Logger logger;
     private final ActorRef<Topic.Command<Trade>> topic;
 
-    public interface Command {}
+    public interface Command {
+    }
 
     public static Behavior<Command> create() {
         return Behaviors.setup(RootActor::new);
@@ -28,12 +29,13 @@ public class RootActor extends AbstractBehavior<RootActor.Command> {
         super(context);
         logger = getContext().getLog();
 
-         topic = context.spawn(Topic.create(Trade.class, "topic-trade"), "MyTopic");
+        topic = context.spawn(Topic.create(Trade.class, "topic-trade"), "MyTopic");
+        TimeService timeService = new TimeService();
 
         List<Integer> symbolIDs = context.getSystem().settings().config().getIntList("te.symbol-id");
         for (int symbolID : symbolIDs) {
             String actorName = "match_actor_" + symbolID;
-            context.spawn(MatchActor.create(symbolID, topic), actorName);
+            context.spawn(MatchActor.create(symbolID, topic, timeService), actorName);
             logger.info("Spawn actor {}", actorName);
         }
     }

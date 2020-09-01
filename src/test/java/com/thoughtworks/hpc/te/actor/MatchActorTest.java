@@ -4,11 +4,12 @@ import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.pubsub.Topic;
+import com.google.protobuf.Timestamp;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
 import com.thoughtworks.hpc.te.domain.MatchActor;
 import com.thoughtworks.hpc.te.domain.Order;
-import org.junit.Assert;
+import com.thoughtworks.hpc.te.domain.TimeService;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -16,21 +17,24 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.thoughtworks.hpc.te.domain.TradingSide.*;
+import static com.thoughtworks.hpc.te.domain.TradingSide.TRADING_BUY;
+import static com.thoughtworks.hpc.te.domain.TradingSide.TRADING_SELL;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MatchActorTest {
     @ClassRule
     public static final TestKitJunitResource testKit = new TestKitJunitResource();
 
-    TestProbe<Trade> subscriber;
+    TestProbe<Topic.Command<Trade>> topic;
     ActorRef<MatchActor.Command> matchActor;
 
     @Before
     public void setUp() {
-        subscriber = testKit.createTestProbe(Trade.class);
-        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, "test-topic"));
-        topic.tell(Topic.subscribe(subscriber.getRef()));
-        matchActor = testKit.spawn(MatchActor.create(1, topic));
+        topic = testKit.createTestProbe();
+        TimeService mockTimeService = mock(TimeService.class);
+        when(mockTimeService.currentTimeMillis()).thenReturn(0L);
+        matchActor = testKit.spawn(MatchActor.create(1, topic.getRef(), mockTimeService));
     }
 
     @Test
@@ -39,7 +43,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(order));
 
-        subscriber.expectNoMessage();
+        topic.expectNoMessage();
     }
 
     @Test
@@ -48,7 +52,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(order));
 
-        subscriber.expectNoMessage();
+        topic.expectNoMessage();
     }
 
     @Test
@@ -59,7 +63,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
-        subscriber.expectNoMessage();
+        topic.expectNoMessage();
     }
 
     @Test
@@ -70,7 +74,7 @@ public class MatchActorTest {
 
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
-        subscriber.expectNoMessage();
+        topic.expectNoMessage();
     }
 
     @Test
@@ -82,8 +86,8 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
+
+        topic.expectMessage(Topic.publish(wantTrade));
     }
 
     @Test
@@ -95,8 +99,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
+        topic.expectMessage(Topic.publish(wantTrade));
     }
 
     @Test
@@ -108,8 +111,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
+        topic.expectMessage(Topic.publish(wantTrade));
     }
 
     @Test
@@ -121,8 +123,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, buyOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
+        topic.expectMessage(Topic.publish(wantTrade));
     }
 
     @Test
@@ -134,8 +135,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(buyOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, sellOrder, sellOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
+        topic.expectMessage(Topic.publish(wantTrade));
     }
 
     @Test
@@ -147,8 +147,7 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, sellOrder.getAmount());
-        Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-        assertTradeEquals(wantTrade, gotTrade);
+        topic.expectMessage(Topic.publish(wantTrade));
     }
 
     @Test
@@ -230,6 +229,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
+                .setDealTime(Timestamp.getDefaultInstance())
                 .build());
 
         wantTrades.add(Trade.newBuilder()
@@ -241,6 +241,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
+                .setDealTime(Timestamp.getDefaultInstance())
                 .build());
 
         wantTrades.add(Trade.newBuilder()
@@ -252,6 +253,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
+                .setDealTime(Timestamp.getDefaultInstance())
                 .build());
 
         wantTrades.add(Trade.newBuilder()
@@ -263,6 +265,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
+                .setDealTime(Timestamp.getDefaultInstance())
                 .build());
 
         for (Order order : orders) {
@@ -270,8 +273,7 @@ public class MatchActorTest {
         }
 
         for (Trade wantTrade : wantTrades) {
-            Trade gotTrade = subscriber.expectMessageClass(Trade.class);
-            assertTradeEquals(wantTrade, gotTrade);
+            topic.expectMessage(Topic.publish(wantTrade));
         }
 
     }
@@ -287,6 +289,7 @@ public class MatchActorTest {
                 .setSellerUserId(sellOder.getUserId())
                 .setBuyerUserId(buyOrder.getUserId())
                 .setSymbolId(buyOrder.getSymbolId())
+                .setDealTime(Timestamp.getDefaultInstance())
                 .build();
     }
 
@@ -310,10 +313,5 @@ public class MatchActorTest {
                 .price(3)
                 .amount(3)
                 .build();
-    }
-
-    private void assertTradeEquals(Trade want, Trade got) {
-        Trade wantOverwriteDealTime = want.toBuilder().setDealTime(got.getDealTime()).build();
-        Assert.assertEquals(wantOverwriteDealTime, got);
     }
 }

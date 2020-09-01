@@ -22,6 +22,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     private final PriorityQueue<Order> buyOrderQueue;
     private final PriorityQueue<Order> sellOrderQueue;
     private final ActorRef<Topic.Command<Trade>> topic;
+    private final TimeService timeService;
 
     public interface Command extends CborSerializable {
     }
@@ -32,10 +33,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         public Order order;
     }
 
-    private MatchActor(ActorContext<Command> context, ActorRef<Topic.Command<Trade>> topic) {
+    private MatchActor(ActorContext<Command> context, ActorRef<Topic.Command<Trade>> topic, TimeService timeService) {
         super(context);
         logger = getContext().getLog();
         this.topic = topic;
+        this.timeService = timeService;
 
         buyOrderQueue = new PriorityQueue<>((o1, o2) -> {
             if (o1.getPrice() != o2.getPrice()) {
@@ -55,10 +57,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }));
     }
 
-    public static Behavior<Command> create(int symbolId, ActorRef<Topic.Command<Trade>> topic) {
+    public static Behavior<Command> create(int symbolId, ActorRef<Topic.Command<Trade>> topic, TimeService timeService) {
         return Behaviors.setup(context -> {
             context.getSystem().receptionist().tell(Receptionist.register(generateServiceKey(symbolId), context.getSelf()));
-            return new MatchActor(context, topic);
+            return new MatchActor(context, topic, timeService);
         });
     }
 
@@ -152,8 +154,8 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 .build();
     }
 
-    public static Timestamp generateCurrentTimestamp() {
-        long millis = System.currentTimeMillis();
+    public Timestamp generateCurrentTimestamp() {
+        long millis = timeService.currentTimeMillis();
         return Timestamp.newBuilder()
                 .setSeconds(millis / 1000)
                 .setNanos((int) ((millis % 1000) * 1000_000))
