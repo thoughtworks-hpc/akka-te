@@ -23,12 +23,16 @@ public class MatchActorTest {
     public static final TestKitJunitResource testKit = new TestKitJunitResource();
 
     TestProbe<Trade> subscriber;
+    ActorRef<Topic.Command<Trade>> topic;
     ActorRef<MatchActor.Command> matchActor;
 
     @Before
     public void setUp() {
         subscriber = testKit.createTestProbe(Trade.class);
-        ActorRef<Topic.Command<Trade>> topic = testKit.spawn(Topic.create(Trade.class, "test-topic"));
+        if (topic != null) {
+            testKit.stop(topic);
+        }
+        topic = testKit.spawn(Topic.create(Trade.class, "test-topic"));
         topic.tell(Topic.subscribe(subscriber.getRef()));
         matchActor = testKit.spawn(MatchActor.create(1, topic));
     }
