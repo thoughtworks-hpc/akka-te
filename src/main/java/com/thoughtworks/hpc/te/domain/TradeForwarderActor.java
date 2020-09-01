@@ -1,4 +1,4 @@
-package com.thoughtworks.hpc.te.actor;
+package com.thoughtworks.hpc.te.domain;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;

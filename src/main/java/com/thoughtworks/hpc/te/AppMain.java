@@ -1,7 +1,7 @@
 package com.thoughtworks.hpc.te;
 
 import akka.actor.typed.ActorSystem;
-import com.thoughtworks.hpc.te.actor.RootActor;
+import com.thoughtworks.hpc.te.domain.RootActor;
 import com.thoughtworks.hpc.te.controller.GRPCServer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

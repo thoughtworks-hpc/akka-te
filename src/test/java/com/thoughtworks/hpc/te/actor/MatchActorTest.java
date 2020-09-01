@@ -6,6 +6,7 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.pubsub.Topic;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
+import com.thoughtworks.hpc.te.domain.MatchActor;
 import com.thoughtworks.hpc.te.domain.Order;
 import org.junit.Assert;
 import org.junit.Before;

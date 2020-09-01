@@ -8,8 +8,8 @@ import akka.actor.typed.receptionist.ServiceKey;
 import akka.cluster.Member;
 import akka.cluster.typed.Cluster;
 import com.google.protobuf.Empty;
-import com.thoughtworks.hpc.te.actor.MatchActor;
-import com.thoughtworks.hpc.te.actor.RootActor;
+import com.thoughtworks.hpc.te.domain.MatchActor;
+import com.thoughtworks.hpc.te.domain.RootActor;
 import io.grpc.stub.StreamObserver;
 
 import java.time.Duration;

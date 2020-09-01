@@ -1,7 +1,7 @@
 package com.thoughtworks.hpc.te.controller;
 
 import akka.actor.typed.ActorSystem;
-import com.thoughtworks.hpc.te.actor.RootActor;
+import com.thoughtworks.hpc.te.domain.RootActor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionService;

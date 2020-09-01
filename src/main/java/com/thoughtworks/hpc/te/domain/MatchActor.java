@@ -1,4 +1,4 @@
-package com.thoughtworks.hpc.te.actor;
+package com.thoughtworks.hpc.te.domain;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -11,9 +11,6 @@ import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
 import com.google.protobuf.Timestamp;
 import com.thoughtworks.hpc.te.controller.Trade;
-import com.thoughtworks.hpc.te.domain.CborSerializable;
-import com.thoughtworks.hpc.te.domain.Order;
-import com.thoughtworks.hpc.te.domain.TradingSide;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
