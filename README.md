@@ -18,3 +18,16 @@ java -Dconfig.file="../config/local_node.conf" -jar app-1.0-allinone.jar
 java -Dconfig.file="../config/local_gateway.conf" -jar app-1.0-allinone.jar
 ```
  
+ ## Docker
+ 
+ ### build
+ 
+ ```shell script
+./build-docker-image
+```
+
+### run
+
+```shell script
+docker-compose up
+```

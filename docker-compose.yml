@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+#  akka gateway
+  akkagateway:
+    image: akka-te:latest
+    environment:
+      APP_CONFIG_FILE: "./gateway.conf"
+    ports:
+      - 50051:50051
+    networks:
+      - akka_te
+# akka node
+  akkanode:
+    image: akka-te:latest
+    environment:
+      APP_CONFIG_FILE: "./node.conf"
+    networks:
+      - akka_te
+networks:
+  akka_te:
+    driver: bridge
