@@ -1,11 +1,7 @@
-FROM openjdk:8-jdk-alpine
+FROM maven:3.6.3-jdk-8
 
-ARG JAR_FILE=target/app-1.0-allinone.jar
+COPY ./ ./
 
-WORKDIR /usr/local/akka-te
+RUN mvn clean package
 
-COPY ${JAR_FILE} app.jar
-
-COPY docker ./
-
-CMD ["./run.sh"]
+CMD ["./docker/run.sh"]

@@ -2,4 +2,4 @@
 
 set -e
 
-java -Dconfig.file=$APP_CONFIG_FILE -jar app.jar
+java -Dconfig.file=./docker/$APP_CONFIG_FILE -jar target/app-1.0-allinone.jar
