@@ -139,8 +139,17 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
     private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
         Order maker = order == buyOrder ? sellOrder : buyOrder;
+        Order taker = order == buyOrder ? buyOrder : sellOrder;
         com.thoughtworks.hpc.te.controller.TradingSide tradingSide;
         tradingSide = com.thoughtworks.hpc.te.controller.TradingSide.valueOf(order.getTradingSide().toString());
+
+        long submit_time;
+        if (amount == taker.getAmount()) {
+            submit_time = taker.getSubmitTime();
+        } else {
+            submit_time = maker.getSubmitTime();
+        }
+
         return Trade.newBuilder()
                 .setMakerId(maker.getOrderId())
                 .setTakerId(order.getOrderId())
@@ -150,7 +159,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 .setSellerUserId(sellOrder.getUserId())
                 .setBuyerUserId(buyOrder.getUserId())
                 .setSymbolId(order.getSymbolId())
-                .setDealTime(generateCurrentTimestamp())
+                .setSubmitTime(submit_time)
                 .build();
     }
 

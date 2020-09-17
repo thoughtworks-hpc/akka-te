@@ -229,7 +229,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
-                .setDealTime(Timestamp.getDefaultInstance())
+                .setSubmitTime(millis)
                 .build());
 
         wantTrades.add(Trade.newBuilder()
@@ -241,7 +241,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
-                .setDealTime(Timestamp.getDefaultInstance())
+                .setSubmitTime(millis)
                 .build());
 
         wantTrades.add(Trade.newBuilder()
@@ -253,7 +253,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
-                .setDealTime(Timestamp.getDefaultInstance())
+                .setSubmitTime(millis - 2)
                 .build());
 
         wantTrades.add(Trade.newBuilder()
@@ -265,7 +265,7 @@ public class MatchActorTest {
                 .setSellerUserId(userB)
                 .setBuyerUserId(userA)
                 .setSymbolId(symbolId)
-                .setDealTime(Timestamp.getDefaultInstance())
+                .setSubmitTime(millis)
                 .build());
 
         for (Order order : orders) {
@@ -289,7 +289,6 @@ public class MatchActorTest {
                 .setSellerUserId(sellOder.getUserId())
                 .setBuyerUserId(buyOrder.getUserId())
                 .setSymbolId(buyOrder.getSymbolId())
-                .setDealTime(Timestamp.getDefaultInstance())
                 .build();
     }
 

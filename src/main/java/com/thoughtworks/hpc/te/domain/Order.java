@@ -24,7 +24,7 @@ public class Order implements CborSerializable{
                 .tradingSide(TradingSide.valueOf(protobufOrder.getTradingSide().toString()))
                 .amount(protobufOrder.getAmount())
                 .price(protobufOrder.getPrice())
-                .submitTime(protobufOrder.getSubmitTime().getSeconds() * 1000 + protobufOrder.getSubmitTime().getNanos() / 1000_000)
+                .submitTime(protobufOrder.getSubmitTime())
                 .build();
     }
 }
