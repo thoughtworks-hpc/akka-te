@@ -45,7 +45,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 return o2.getPrice() - o1.getPrice();
             }
             // time ASC
-            return (int) (o1.getSubmitTime() - o2.getSubmitTime());
+            long diff = o1.getSubmitTime() - o2.getSubmitTime();
+            if (diff == 0L) {
+                return 0;
+            }
+            return diff > 0L ? 1 : -1;
         });
         sellOrderQueue = new PriorityQueue<>(((o1, o2) -> {
             if (o1.getPrice() != o2.getPrice()) {
@@ -53,7 +57,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 return o1.getPrice() - o2.getPrice();
             }
             // time ASC
-            return (int) (o1.getSubmitTime() - o2.getSubmitTime());
+            long diff = o1.getSubmitTime() - o2.getSubmitTime();
+            if (diff == 0L) {
+                return 0;
+            }
+            return diff > 0L ? 1 : -1;
         }));
     }
 

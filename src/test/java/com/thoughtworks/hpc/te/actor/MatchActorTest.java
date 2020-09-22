@@ -4,7 +4,6 @@ import akka.actor.testkit.typed.javadsl.TestKitJunitResource;
 import akka.actor.testkit.typed.javadsl.TestProbe;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.pubsub.Topic;
-import com.google.protobuf.Timestamp;
 import com.thoughtworks.hpc.te.controller.Trade;
 import com.thoughtworks.hpc.te.controller.TradingSide;
 import com.thoughtworks.hpc.te.domain.MatchActor;
@@ -147,6 +146,20 @@ public class MatchActorTest {
         matchActor.tell(new MatchActor.MatchOrder(sellOrder));
 
         Trade wantTrade = generateTrade(sellOrder, buyOrder, buyOrder, sellOrder.getAmount());
+        topic.expectMessage(Topic.publish(wantTrade));
+    }
+
+    @Test
+    public void should_generate_correct_trades_given_time_diff_exceed_init() {
+        Order buyOrder1 = Order.builder().orderId(863).price(194).amount(100).submitTime(1600759778295257800L).tradingSide(TRADING_BUY).build();
+        Order buyOrder2 = Order.builder().orderId(667).price(194).amount(100).submitTime(1600759775842526700L).tradingSide(TRADING_BUY).build();
+        matchActor.tell(new MatchActor.MatchOrder(buyOrder1));
+        matchActor.tell(new MatchActor.MatchOrder(buyOrder2));
+        Order sellOrder = Order.builder().orderId(996).price(181).amount(100).tradingSide(TRADING_SELL).build();
+
+        matchActor.tell(new MatchActor.MatchOrder(sellOrder));
+
+        Trade wantTrade = generateTrade(sellOrder, buyOrder2, buyOrder2, 100);
         topic.expectMessage(Topic.publish(wantTrade));
     }
 
