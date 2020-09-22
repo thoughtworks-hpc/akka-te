@@ -45,7 +45,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 return o2.getPrice() - o1.getPrice();
             }
             // time ASC
-            return (int) (o1.getSubmitTime() - o2.getSubmitTime());
+            long diff = o1.getSubmitTime() - o2.getSubmitTime();
+            if (diff == 0L) {
+                return 0;
+            }
+            return diff > 0L ? 1 : -1;
         });
         sellOrderQueue = new PriorityQueue<>(((o1, o2) -> {
             if (o1.getPrice() != o2.getPrice()) {
@@ -53,7 +57,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 return o1.getPrice() - o2.getPrice();
             }
             // time ASC
-            return (int) (o1.getSubmitTime() - o2.getSubmitTime());
+            long diff = o1.getSubmitTime() - o2.getSubmitTime();
+            if (diff == 0L) {
+                return 0;
+            }
+            return diff > 0L ? 1 : -1;
         }));
     }
 
@@ -78,13 +86,15 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         if (order.getTradingSide() == TradingSide.TRADING_BUY) {
             buyOrder = order;
             sellOrder = sellOrderQueue.peek();
+            logger.info("Get top sell order: {}, queue size: {}", sellOrder, sellOrderQueue.size());
         } else {
             sellOrder = order;
             buyOrder = buyOrderQueue.peek();
+            logger.info("Get top buy order: {}, queue size: {}", buyOrder, buyOrderQueue.size());
         }
 
         if (buyOrder == null || sellOrder == null) {
-            logger.info("Opposite order queue is empty. add order {} to queue.", order.getOrderId());
+            logger.info("Opposite order queue is empty.");
             addOrderToQueue(order);
             return Behaviors.same();
         }
@@ -101,8 +111,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
         if (order == buyOrder) {
             sellOrderQueue.poll();
+            logger.info("Poll from sell queue.");
         } else {
             buyOrderQueue.poll();
+            logger.info("Poll from buy queue.");
         }
 
         if (buyOrder.getAmount() < sellOrder.getAmount()) {
@@ -111,8 +123,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                     .build();
             if (order == buyOrder) {
                 sellOrderQueue.add(remainingSellOrder);
+                logger.info("Add remain order back to queue. {}", remainingSellOrder);
                 return Behaviors.same();
             } else {
+                logger.info("Remain order continue match. {}", remainingSellOrder);
                 return match(new MatchOrder(remainingSellOrder));
             }
         }
@@ -122,9 +136,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                     .amount(buyOrder.getAmount() - sellOrder.getAmount())
                     .build();
             if (order == buyOrder) {
+                logger.info("Remain order continue match. {}", remainingBuyOrder);
                 return match(new MatchOrder(remainingBuyOrder));
             } else {
                 buyOrderQueue.add(remainingBuyOrder);
+                logger.info("Add remain order back to queue. {}", remainingBuyOrder);
                 return Behaviors.same();
             }
         }
@@ -139,8 +155,17 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
     private Trade generateTrade(Order order, Order buyOrder, Order sellOrder, int amount) {
         Order maker = order == buyOrder ? sellOrder : buyOrder;
+        Order taker = order == buyOrder ? buyOrder : sellOrder;
         com.thoughtworks.hpc.te.controller.TradingSide tradingSide;
         tradingSide = com.thoughtworks.hpc.te.controller.TradingSide.valueOf(order.getTradingSide().toString());
+
+        long submit_time;
+        if (amount == taker.getAmount()) {
+            submit_time = taker.getSubmitTime();
+        } else {
+            submit_time = maker.getSubmitTime();
+        }
+
         return Trade.newBuilder()
                 .setMakerId(maker.getOrderId())
                 .setTakerId(order.getOrderId())
@@ -150,7 +175,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                 .setSellerUserId(sellOrder.getUserId())
                 .setBuyerUserId(buyOrder.getUserId())
                 .setSymbolId(order.getSymbolId())
-                .setDealTime(generateCurrentTimestamp())
+                .setSubmitTime(submit_time)
                 .build();
     }
 
@@ -168,6 +193,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         } else {
             sellOrderQueue.add(order);
         }
+        logger.info("Add order {} to {} queue", order, order.getTradingSide().toString());
     }
 
     @Override
