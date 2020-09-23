@@ -8,6 +8,13 @@
         </encoder>
     </appender>
 
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>/tmp/log/akka_te_${HOST_NAME}.log</file>
+        <encoder>
+            <pattern>[%date{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%file:%line] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>1024</queueSize>
         <neverBlock>true</neverBlock>
@@ -16,6 +23,7 @@
 
     <root level="INFO">
         <appender-ref ref="ASYNC"/>
+        <appender-ref ref="FILE" />
     </root>
 
 </configuration>

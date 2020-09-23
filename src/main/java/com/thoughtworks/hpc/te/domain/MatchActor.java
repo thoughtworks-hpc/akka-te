@@ -86,11 +86,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         if (order.getTradingSide() == TradingSide.TRADING_BUY) {
             buyOrder = order;
             sellOrder = sellOrderQueue.peek();
-            logger.info("Get top sell order: {}, queue size: {}", sellOrder, sellOrderQueue.size());
+            logger.debug("Get top sell order: {}, queue size: {}", sellOrder, sellOrderQueue.size());
         } else {
             sellOrder = order;
             buyOrder = buyOrderQueue.peek();
-            logger.info("Get top buy order: {}, queue size: {}", buyOrder, buyOrderQueue.size());
+            logger.debug("Get top buy order: {}, queue size: {}", buyOrder, buyOrderQueue.size());
         }
 
         if (buyOrder == null || sellOrder == null) {
@@ -111,10 +111,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
         if (order == buyOrder) {
             sellOrderQueue.poll();
-            logger.info("Poll from sell queue.");
+            logger.debug("Poll from sell queue.");
         } else {
             buyOrderQueue.poll();
-            logger.info("Poll from buy queue.");
+            logger.debug("Poll from buy queue.");
         }
 
         if (buyOrder.getAmount() < sellOrder.getAmount()) {
@@ -123,10 +123,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                     .build();
             if (order == buyOrder) {
                 sellOrderQueue.add(remainingSellOrder);
-                logger.info("Add remain order back to queue. {}", remainingSellOrder);
+                logger.debug("Add remain order back to queue. {}", remainingSellOrder);
                 return Behaviors.same();
             } else {
-                logger.info("Remain order continue match. {}", remainingSellOrder);
+                logger.debug("Remain order continue match. {}", remainingSellOrder);
                 return match(new MatchOrder(remainingSellOrder));
             }
         }
@@ -136,11 +136,11 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
                     .amount(buyOrder.getAmount() - sellOrder.getAmount())
                     .build();
             if (order == buyOrder) {
-                logger.info("Remain order continue match. {}", remainingBuyOrder);
+                logger.debug("Remain order continue match. {}", remainingBuyOrder);
                 return match(new MatchOrder(remainingBuyOrder));
             } else {
                 buyOrderQueue.add(remainingBuyOrder);
-                logger.info("Add remain order back to queue. {}", remainingBuyOrder);
+                logger.debug("Add remain order back to queue. {}", remainingBuyOrder);
                 return Behaviors.same();
             }
         }
@@ -193,7 +193,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         } else {
             sellOrderQueue.add(order);
         }
-        logger.info("Add order {} to {} queue", order, order.getTradingSide().toString());
+        logger.debug("Add order {} to {} queue", order, order.getTradingSide().toString());
     }
 
     @Override

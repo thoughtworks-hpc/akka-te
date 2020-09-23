@@ -11,7 +11,7 @@ import com.thoughtworks.hpc.te.controller.Trade;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class RootActor extends AbstractBehavior<RootActor.Command> {
@@ -32,12 +32,12 @@ public class RootActor extends AbstractBehavior<RootActor.Command> {
         topic = context.spawn(Topic.create(Trade.class, "topic-trade"), "MyTopic");
         TimeService timeService = new TimeService();
 
-        List<Integer> symbolIDs = context.getSystem().settings().config().getIntList("te.symbol-id");
-        for (int symbolID : symbolIDs) {
-            String actorName = "match_actor_" + symbolID;
-            context.spawn(MatchActor.create(symbolID, topic, timeService), actorName);
+        String symbolIdsStr = context.getSystem().settings().config().getString("te.symbol-id");
+        Arrays.stream(symbolIdsStr.split(",")).mapToInt(str -> Integer.parseInt(str.trim())).forEach(symbolId -> {
+            String actorName = "match_actor_" + symbolId;
+            context.spawn(MatchActor.create(symbolId, topic, timeService), actorName);
             logger.info("Spawn actor {}", actorName);
-        }
+        });
     }
 
     public static class CreateTradeForwarder implements Command {

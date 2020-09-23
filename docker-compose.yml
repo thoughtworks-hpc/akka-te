@@ -5,6 +5,8 @@ services:
     image: akka-te:latest
     environment:
       APP_CONFIG_FILE: "./gateway.conf"
+      HOST_NAME: "akkagateway"
+      SYMBOL_IDS: "1, 2, 3, 4"
     ports:
       - 50051:50051
     networks:
@@ -14,6 +16,8 @@ services:
     image: akka-te:latest
     environment:
       APP_CONFIG_FILE: "./node.conf"
+      HOST_NAME: "akkanode"
+      SYMBOL_IDS: "5, 6, 7, 8"
     networks:
       - akka_te
 networks:
