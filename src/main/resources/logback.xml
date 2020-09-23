@@ -11,7 +11,7 @@
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>/tmp/log/akka_te_${HOST_NAME}.log</file>
         <encoder>
-            <pattern>[%date{ISO8601}] [%level] [%logger] [%thread] [%X{akkaSource}] - %msg%n</pattern>
+            <pattern>[%date{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%file:%line] - %msg%n</pattern>
         </encoder>
     </appender>
 
