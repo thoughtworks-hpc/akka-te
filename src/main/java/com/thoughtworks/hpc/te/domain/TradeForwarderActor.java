@@ -61,7 +61,7 @@ public class TradeForwarderActor extends AbstractBehavior<Trade> {
             }
             return this;
         }
-        logger.info("Send trade {} to client", trade);
+        logger.debug("Send trade {} to client", trade);
         return this;
     }
 
