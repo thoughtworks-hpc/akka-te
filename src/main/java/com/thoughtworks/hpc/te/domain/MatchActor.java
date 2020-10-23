@@ -79,7 +79,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
 
     private Behavior<Command> match(MatchOrder matchOrder) {
         Order order = matchOrder.order;
-        logger.info("MatchActor handle order {}", order);
+        logger.debug("MatchActor handle order {}", order);
         Order buyOrder;
         Order sellOrder;
 
@@ -100,7 +100,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         }
 
         if (buyOrder.getPrice() < sellOrder.getPrice()) {
-            logger.info("Buy order price [{}] less than sell order[{}].", buyOrder.getPrice(), sellOrder.getPrice());
+            logger.debug("Buy order price [{}] less than sell order[{}].", buyOrder.getPrice(), sellOrder.getPrice());
             addOrderToQueue(order);
             return Behaviors.same();
         }
@@ -149,7 +149,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     }
 
     private void sendTradeToEventStream(Trade trade) {
-        logger.info("Match success, trade {}", trade);
+        logger.debug("Match success, trade {}", trade);
         topic.tell(Topic.publish(trade));
     }
 
