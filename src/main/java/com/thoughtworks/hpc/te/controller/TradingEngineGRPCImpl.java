@@ -53,7 +53,7 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
                     }
                     serviceInstances.forEach(actor -> {
                         actor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order)));
-                        system.log().error("Cache actor for symbol_id {}", order.getSymbolId());
+                        system.log().info("Cache actor for symbol_id {}", order.getSymbolId());
                         symbolIdToActor.put(symbolId, actor);
                     });
                 }
