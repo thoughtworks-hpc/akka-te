@@ -30,7 +30,7 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
 
     @Override
     public void match(Order order, StreamObserver<Reply> responseObserver) {
-        system.log().info("GRPC Receive match request " + order);
+        system.log().debug("GRPC Receive match request " + order);
         Reply reply = Reply.newBuilder().setStatus(Status.STATUS_SUCCESS).setMessage("ok").build();
         final int symbolId = order.getSymbolId();
 
@@ -53,7 +53,7 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
                     }
                     serviceInstances.forEach(actor -> {
                         actor.tell(new MatchActor.MatchOrder(com.thoughtworks.hpc.te.domain.Order.fromProtobufOrder(order)));
-                        system.log().error("Cache actor for symbol_id {}", order.getSymbolId());
+                        system.log().info("Cache actor for symbol_id {}", order.getSymbolId());
                         symbolIdToActor.put(symbolId, actor);
                     });
                 }
