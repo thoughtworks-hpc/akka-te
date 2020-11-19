@@ -13,25 +13,44 @@ import com.thoughtworks.hpc.te.domain.RootActor;
 import io.grpc.stub.StreamObserver;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBase {
     private final ActorSystem<RootActor.Command> system;
 
     private Map<Integer, ActorRef<MatchActor.Command>> symbolIdToActor;
+    private AtomicBoolean isInNoMatchMode;
+    private AtomicLong orderCounter;
 
     public TradingEngineGRPCImpl(ActorSystem<RootActor.Command> system) {
         this.system = system;
         symbolIdToActor = new ConcurrentHashMap<>();
+        isInNoMatchMode = new AtomicBoolean(false);
+        orderCounter = new AtomicLong(0);
     }
 
     @Override
     public void match(Order order, StreamObserver<Reply> responseObserver) {
         system.log().debug("GRPC Receive match request " + order);
+        orderCounter.incrementAndGet();
+
         Reply reply = Reply.newBuilder().setStatus(Status.STATUS_SUCCESS).setMessage("ok").build();
+        if (isInNoMatchMode.get()) {
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+
+            return;
+        }
+
         final int symbolId = order.getSymbolId();
 
         ActorRef<MatchActor.Command> actorOfSymbolId = symbolIdToActor.get(symbolId);
@@ -78,5 +97,58 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
         }
 
         system.tell(new RootActor.CreateTradeForwarder(responseObserver));
+    }
+
+    @Override
+    public void enterNoMatchMode(com.google.protobuf.Empty request,
+                                 io.grpc.stub.StreamObserver<com.thoughtworks.hpc.te.controller.Reply> responseObserver) {
+        isInNoMatchMode.set(true);
+
+        Reply reply = Reply.newBuilder().setStatus(Status.STATUS_SUCCESS).setMessage("ok").build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void leaveNoMatchMode(Empty request, StreamObserver<Reply> responseObserver) {
+        isInNoMatchMode.set(false);
+
+        Reply reply = Reply.newBuilder().setStatus(Status.STATUS_SUCCESS).setMessage("ok").build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getStats(com.google.protobuf.Empty request,
+                         io.grpc.stub.StreamObserver<com.thoughtworks.hpc.te.controller.Stat> responseObserver) {
+
+        List<CompletableFuture<Object>> futureList = new ArrayList<>();
+        symbolIdToActor.forEach((symbolId, actor) -> {
+            CompletableFuture<Object> future = AskPattern.ask(actor, replyTo -> new MatchActor.MatchStats(replyTo), Duration.ofSeconds(5),
+                    system.scheduler()).toCompletableFuture();
+            futureList.add(future);
+        });
+
+        CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).join();
+        long processedOrderNumber = 0;
+        long generatedTradeNumber = 0;
+        Status status = Status.STATUS_SUCCESS;
+
+        for (CompletableFuture<Object> future : futureList) {
+            try {
+                processedOrderNumber += ((MatchActor.Stats) future.get()).processedOrderNumber;
+                generatedTradeNumber += ((MatchActor.Stats) future.get()).generatedTradeNumber;
+            } catch (InterruptedException | ExecutionException e) {
+                status = Status.STATUS_FAILURE;
+                system.log().info("getStats error: {}", e.toString());
+                e.printStackTrace();
+            }
+        }
+
+        Stat stat = Stat.newBuilder().setReceivedOrderNumber(orderCounter.longValue())
+                .setProcessedOrderNumber(processedOrderNumber).setGeneratedTradeNumber(generatedTradeNumber)
+                .setStatus(status).build();
+        responseObserver.onNext(stat);
+        responseObserver.onCompleted();
     }
 }

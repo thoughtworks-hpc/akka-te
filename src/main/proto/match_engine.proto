@@ -13,6 +13,9 @@ package match_engine_proto;
 service TradingEngine {
   rpc Match (Order) returns (Reply) {}
   rpc SubscribeMatchResult(google.protobuf.Empty) returns (stream Trade) {}
+  rpc EnterNoMatchMode (google.protobuf.Empty) returns (Reply) {}
+  rpc LeaveNoMatchMode (google.protobuf.Empty) returns (Reply) {}
+  rpc GetStats (google.protobuf.Empty) returns (Stat) {}
 }
 
 enum TradingSide {
@@ -49,7 +52,14 @@ message Trade {
   int32 amount = 4;
   int32 price = 5;
   int32 seller_user_id = 6;
-  int32 buyer_user_id =7;
+  int32 buyer_user_id = 7;
   int32 symbol_id = 8;
   int64 submit_time = 9; // 提交时间
+}
+
+message Stat {
+  int64 received_order_number = 1; //通过rpc收到的总订单数
+  int64 processed_order_number = 2; //通过match actor处理过的总订单数
+  int64 generated_trade_number = 3; //通过match actor生成的总成交单数
+  Status status = 4;
 }

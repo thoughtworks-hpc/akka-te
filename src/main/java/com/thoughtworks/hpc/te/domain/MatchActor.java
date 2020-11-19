@@ -23,6 +23,9 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     private final PriorityQueue<Order> sellOrderQueue;
     private final ActorRef<Topic.Command<Trade>> topic;
     private final TimeService timeService;
+    private long receivedOrderCounter;
+    private boolean isReceivedOrderCounted;
+    private long generatedTradeCounter;
 
     public interface Command extends CborSerializable {
     }
@@ -33,11 +36,31 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         public Order order;
     }
 
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static final class MatchStats implements Command {
+
+        public ActorRef<Object> replyTo;
+    }
+
+    public interface Reply extends CborSerializable {
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Stats implements Reply {
+        public long processedOrderNumber;
+        public long generatedTradeNumber;
+    }
+
     private MatchActor(ActorContext<Command> context, ActorRef<Topic.Command<Trade>> topic, TimeService timeService) {
         super(context);
         logger = getContext().getLog();
         this.topic = topic;
         this.timeService = timeService;
+        this.receivedOrderCounter = 0;
+        this.isReceivedOrderCounted = false;
+        this.generatedTradeCounter = 0;
 
         buyOrderQueue = new PriorityQueue<>((o1, o2) -> {
             if (o1.getPrice() != o2.getPrice()) {
@@ -80,6 +103,10 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     private Behavior<Command> match(MatchOrder matchOrder) {
         Order order = matchOrder.order;
         logger.debug("MatchActor handle order {}", order);
+        if (!isReceivedOrderCounted) {
+            receivedOrderCounter++;
+            isReceivedOrderCounted = true;
+        }
         Order buyOrder;
         Order sellOrder;
 
@@ -96,12 +123,14 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         if (buyOrder == null || sellOrder == null) {
             logger.info("Opposite order queue is empty.");
             addOrderToQueue(order);
+            isReceivedOrderCounted = false;
             return Behaviors.same();
         }
 
         if (buyOrder.getPrice() < sellOrder.getPrice()) {
             logger.debug("Buy order price [{}] less than sell order[{}].", buyOrder.getPrice(), sellOrder.getPrice());
             addOrderToQueue(order);
+            isReceivedOrderCounted = false;
             return Behaviors.same();
         }
 
@@ -124,6 +153,7 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
             if (order == buyOrder) {
                 sellOrderQueue.add(remainingSellOrder);
                 logger.debug("Add remain order back to queue. {}", remainingSellOrder);
+                isReceivedOrderCounted = false;
                 return Behaviors.same();
             } else {
                 logger.debug("Remain order continue match. {}", remainingSellOrder);
@@ -141,15 +171,18 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
             } else {
                 buyOrderQueue.add(remainingBuyOrder);
                 logger.debug("Add remain order back to queue. {}", remainingBuyOrder);
+                isReceivedOrderCounted = false;
                 return Behaviors.same();
             }
         }
 
+        isReceivedOrderCounted = false;
         return Behaviors.same();
     }
 
     private void sendTradeToEventStream(Trade trade) {
         logger.debug("Match success, trade {}", trade);
+        generatedTradeCounter++;
         topic.tell(Topic.publish(trade));
     }
 
@@ -196,8 +229,15 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
         logger.debug("Add order {} to {} queue", order, order.getTradingSide().toString());
     }
 
+    private Behavior<Command> getStats(MatchStats matchStats) {
+        matchStats.replyTo.tell(new Stats(receivedOrderCounter, generatedTradeCounter));
+
+        return Behaviors.same();
+    }
+
     @Override
     public Receive<Command> createReceive() {
-        return newReceiveBuilder().onMessage(MatchOrder.class, this::match).build();
+        return newReceiveBuilder().onMessage(MatchOrder.class, this::match)
+                .onMessage(MatchStats.class, this::getStats).build();
     }
 }
