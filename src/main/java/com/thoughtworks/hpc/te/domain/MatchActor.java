@@ -51,6 +51,8 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     public static class Stats implements Reply {
         public long processedOrderNumber;
         public long generatedTradeNumber;
+        public long buyQueueSize;
+        public long sellQueueSize;
     }
 
     private MatchActor(ActorContext<Command> context, ActorRef<Topic.Command<Trade>> topic, TimeService timeService) {
@@ -230,7 +232,12 @@ public class MatchActor extends AbstractBehavior<MatchActor.Command> {
     }
 
     private Behavior<Command> getStats(MatchStats matchStats) {
-        matchStats.replyTo.tell(new Stats(receivedOrderCounter, generatedTradeCounter));
+        matchStats.replyTo.tell(new Stats(receivedOrderCounter, generatedTradeCounter, buyOrderQueue.size(), sellOrderQueue.size()));
+
+//        Order buyOrder = buyOrderQueue.peek();
+//        Order sellOrder = sellOrderQueue.peek();
+//        logger.info("Top order from buyOrderQueue of symbol {} is {}", buyOrder.getSymbolId(), buyOrder.getPrice());
+//        logger.info("Top order from sellOrder of symbol {} is {}", sellOrder.getSymbolId(), sellOrder.getPrice());
 
         return Behaviors.same();
     }

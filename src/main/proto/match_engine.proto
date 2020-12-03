@@ -61,5 +61,7 @@ message Stat {
   int64 received_order_number = 1; //通过rpc收到的总订单数
   int64 processed_order_number = 2; //通过match actor处理过的总订单数
   int64 generated_trade_number = 3; //通过match actor生成的总成交单数
-  Status status = 4;
+  int64 buy_queue_size = 4;
+  int64 sell_queue_size = 5;
+  Status status = 6;
 }

@@ -132,12 +132,16 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
         CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).join();
         long processedOrderNumber = 0;
         long generatedTradeNumber = 0;
+        long buyQueueSize = 0;
+        long sellQueueSize = 0;
         Status status = Status.STATUS_SUCCESS;
 
         for (CompletableFuture<Object> future : futureList) {
             try {
                 processedOrderNumber += ((MatchActor.Stats) future.get()).processedOrderNumber;
                 generatedTradeNumber += ((MatchActor.Stats) future.get()).generatedTradeNumber;
+                buyQueueSize += ((MatchActor.Stats) future.get()).buyQueueSize;
+                sellQueueSize += ((MatchActor.Stats) future.get()).sellQueueSize;
             } catch (InterruptedException | ExecutionException e) {
                 status = Status.STATUS_FAILURE;
                 system.log().info("getStats error: {}", e.toString());
@@ -147,6 +151,7 @@ public class TradingEngineGRPCImpl extends TradingEngineGrpc.TradingEngineImplBa
 
         Stat stat = Stat.newBuilder().setReceivedOrderNumber(orderCounter.longValue())
                 .setProcessedOrderNumber(processedOrderNumber).setGeneratedTradeNumber(generatedTradeNumber)
+                .setBuyQueueSize(buyQueueSize).setSellQueueSize(sellQueueSize)
                 .setStatus(status).build();
         responseObserver.onNext(stat);
         responseObserver.onCompleted();
